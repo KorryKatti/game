@@ -14,6 +14,7 @@ build/
 
 # Linker files
 *.ilk
+planz.md
 
 # Debugger Files
 *.pdb
