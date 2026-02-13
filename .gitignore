@@ -1,5 +1,6 @@
 # Prerequisites
 *.d
+*.aseprite
 
 # Compiled Object files
 *.slo
