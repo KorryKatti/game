@@ -54,7 +54,7 @@ int main() {
         // Camera reset (zoom and rotation)
         if (IsKeyPressed(KEY_R))
         {
-            camera.zoom = 3.0f;
+            camera.zoom = 7.0f;
         }
         // int key_pressed = GetCharPressed();
         // if (key_pressed>0){
