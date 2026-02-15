@@ -8,7 +8,13 @@ bool draining_mana =false;
 bool is_cast = false;
 Color bloodRed = { 128, 0, 0, 255 }; // Blood Red (common approximation)   
 Color spellColor = RED;
-int number_of_trees = 15;
+int number_of_trees = 115;
+struct Ball{
+    Color spellColor = RED;
+    Vector2 ball_pos = {};
+    Vector2 mouse_pos = {};
+    float ball_r = 25.0f;
+};
 
 bool checkCollision(Vector2 player_pos, std::vector<Vector2>& trees_pos){
     Rectangle player_rect = {player_pos.x, player_pos.y, 20, 40};
@@ -95,6 +101,9 @@ int main() {
     Image player_self = LoadImage("assets/self_char.png");
     Texture2D self_char = LoadTextureFromImage(player_self);
 
+    std::vector<Ball> ball_vec;
+    int balls_size = 0; // lmao
+
 
     DisableCursor();
     UnloadImage(island);
@@ -144,31 +153,48 @@ int main() {
         if (checkCollision(player_pos,tree_pos)){
             player_pos = old_pos;
         }
-        for (int i = 0; i < tree_pos.size(); i++){
-            Rectangle tree_rect = {tree_pos[i].x, tree_pos[i].y, 20, 60};
+        for (int b = 0; b < ball_vec.size(); b++) {
+            for (int t = 0; t < tree_pos.size(); t++) {
 
-            if (CheckCollisionCircleRec(
-                    (Vector2){(float)ball_x, (float)ball_y},
-                    ball_r,
-                    tree_rect))
-            {
-                // Remove tree
-                tree_pos[i] = {0,0};
+                Rectangle tree_rect = { tree_pos[t].x, tree_pos[t].y, 20, 60 };
 
-                // Optional: shrink ball
-                ball_r -= 5.0f;
-
-                break; // IMPORTANT: stop loop after erase
+                if (CheckCollisionCircleRec(
+                        ball_vec[b].ball_pos,
+                        ball_vec[b].ball_r,
+                        tree_rect))
+                {
+                    if (ball_vec[b].ball_r >= 4.0f){tree_pos[t] = {0, 0};}          // remove tree
+                    ball_vec[b].ball_r -= 5.0f;    // shrink ball
+                    break; // stop checking trees for this ball
+                }
             }
         }
+
 
 
         if (IsKeyDown(KEY_ONE)){
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
                 if (mana >= 25.0f){
+                Ball red_ball;
                 is_cast = true;
-                mouse_pos = GetMousePosition();
+                red_ball.mouse_pos = GetMousePosition();
                 mana = mana - 5.0f;
+                red_ball.spellColor = bloodRed;
+                red_ball.ball_pos = player_pos;
+                ball_vec.push_back(red_ball);
+                balls_size = ball_vec.size();
+                }}
+        }else if (IsKeyDown(KEY_TWO)){
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
+                if (mana >= 30.0f){
+                Ball blue_ball;
+                is_cast = true;
+                blue_ball.mouse_pos = GetMousePosition();
+                mana = mana - 5.0f;
+                blue_ball.spellColor = DARKBLUE;
+                blue_ball.ball_pos = player_pos;
+                ball_vec.push_back(blue_ball);
+                balls_size = ball_vec.size();
                 }}
         }
 
@@ -212,33 +238,47 @@ int main() {
                 health = 0.0f;
             }
 
-            if (is_cast && ball_r > 0.0f){
-                DrawCircle(ball_x, ball_y, ball_r, bloodRed);
+            if (is_cast && ball_r > 0.0f && balls_size!=0){
+                if (!ball_vec.empty()){
+                    for (int i = 0; i < ball_vec.size(); i++)
+                    {
+                        Ball& current_ball = ball_vec[i];   // reference, not copy!
 
-                Vector2 direction = {
-                    mouse_pos.x - ball_x,
-                    mouse_pos.y - ball_y
-                };
+                        DrawCircle(current_ball.ball_pos.x,
+                                current_ball.ball_pos.y,
+                                current_ball.ball_r,
+                                current_ball.spellColor);
 
-                float length = sqrt(direction.x * direction.x + direction.y * direction.y);
+                        Vector2 direction = {
+                            current_ball.mouse_pos.x - current_ball.ball_pos.x,
+                            current_ball.mouse_pos.y - current_ball.ball_pos.y
+                        };
 
-                if (length > 1.0f)  // avoid jitter near target
-                {
-                    direction.x /= length;
-                    direction.y /= length;
+                        float length = sqrt(direction.x * direction.x +
+                                            direction.y * direction.y);
 
-                    float speed = 2.0f;  // adjust speed here
+                        current_ball.ball_r -= 0.1f;
 
-                    ball_x += direction.x * speed;
-                    ball_y += direction.y * speed;
+                        if (length > 1.0f)
+                        {
+                            direction.x /= length;
+                            direction.y /= length;
+
+                            float speed = 2.0f;
+
+                            current_ball.ball_pos.x += direction.x * speed;
+                            current_ball.ball_pos.y += direction.y * speed;
+                        }
+                    }
                 }
-
-                ball_r -= 0.1f;
             }if (ball_r <= 0.0f){
                 is_cast = false;
                 ball_r = 25.0f;
                 ball_x = player_pos.x;
                 ball_y = player_pos.y;
+                for (int i=0;i<ball_vec.size();i++){
+                    ball_vec.clear();
+                }
             }
 
             EndMode2D();
