@@ -1,8 +1,21 @@
 #include "raylib.h"
 #include <bits/stdc++.h>
 
-int health = 300;
-int mana = 300;
+float health = 300.0f;
+float mana = 300.0f;
+double health_timer = 0.0;
+bool draining_mana =false;
+
+bool checkCollision(Vector2 player_pos,std::vector<Vector2> trees_pos){
+    Rectangle player_rect = {player_pos.x,player_pos.y,20,40};
+    for (int i=0;i<15;i++){
+        Rectangle tree_rect = {trees_pos[i].x,trees_pos[i].y,20,60};
+            if (CheckCollisionRecs(player_rect, tree_rect)){
+                return true;
+            }
+    }
+    return false;
+}
 
 std::vector<Texture2D> tree_spawner(){
     std::vector<Texture2D> vec(15);
@@ -34,28 +47,24 @@ std::vector<Vector2> tree_positions(){
 }
 
 std::string getDirectionToMouse(Vector2 player_pos){
-    int mouseX = GetMouseX();
-    int mouseY = GetMouseY();
+    Vector2 mouse = GetMousePosition();
+    float angle = atan2(mouse.y - player_pos.y,
+                        mouse.x - player_pos.x);
 
-    float dx = mouseX - player_pos.x;
-    float dy = mouseY - player_pos.y;
+    float deg = angle * RAD2DEG;
 
-    // Small deadzone so it doesn't flicker when very close
-    if (fabs(dx) < 5 && fabs(dy) < 5)
-        return "center";
+    if (deg < 0) deg += 360;
 
-    if (dx > 0 && dy < 0)  return "northeast";
-    if (dx > 0 && dy > 0)  return "southeast";
-    if (dx < 0 && dy < 0)  return "northwest";
-    if (dx < 0 && dy > 0)  return "southwest";
-
-    if (dx > 0) return "east";
-    if (dx < 0) return "west";
-    if (dy < 0) return "north";
-    if (dy > 0) return "south";
-
-    return "center";
+    if (deg >= 337.5 || deg < 22.5)   return "east";
+    if (deg < 67.5)   return "southeast";
+    if (deg < 112.5)  return "south";
+    if (deg < 157.5)  return "southwest";
+    if (deg < 202.5)  return "west";
+    if (deg < 247.5)  return "northwest";
+    if (deg < 292.5)  return "north";
+    return "northeast";
 }
+
 
 
 void bars(){
@@ -88,7 +97,6 @@ int main() {
     Vector2 player_pos = {400,280};
     
     Rectangle tree_rect = {0,0,20,60};
-
     
  
     SetTargetFPS(60);
@@ -102,11 +110,20 @@ int main() {
 
     // std::string text = "";
     while (!WindowShouldClose()) {  
+        if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && mana>12.0f){
+            mana = mana - 10.0f;
+            health = health+2.0f;
+        }
+
                // Player movement
-        if (IsKeyDown(KEY_D)) player_pos.x += 0.5;
-        else if (IsKeyDown(KEY_A)) player_pos.x -= 0.5;
-        else if (IsKeyDown(KEY_S)) player_pos.y += 0.5;
-        else if (IsKeyDown(KEY_W)) player_pos.y -= 0.5;
+        Vector2 old_pos = player_pos;
+        if (IsKeyDown(KEY_D)) player_pos.x += 0.5f;
+        else if (IsKeyDown(KEY_A)) player_pos.x -= 0.5f;
+        else if (IsKeyDown(KEY_S)) player_pos.y += 0.5f;
+        else if (IsKeyDown(KEY_W)) player_pos.y -= 0.5f;
+        if (checkCollision(player_pos,tree_pos)){
+            player_pos = old_pos;
+        }
 
         // Camera target follows player
         camera.target = (Vector2){ player_pos.x + 20, player_pos.y + 20 };
@@ -117,30 +134,21 @@ int main() {
         if (IsKeyDown(KEY_Z)){camera.zoom = expf(logf(camera.zoom + 0.1f));}
         else if (IsKeyDown(KEY_X)){camera.zoom = expf(logf(camera.zoom - 0.1f));}
 
-        if (camera.zoom > 5.0f) camera.zoom = 5.0f;
+        if (camera.zoom > 10.0f) camera.zoom = 10.0f;
         else if (camera.zoom < 1.5f) camera.zoom = 1.5f;
 
         // Camera reset (zoom and rotation)
         if (IsKeyPressed(KEY_R))
         {
-            camera.zoom = 10.0f;
+            camera.zoom = 9.9f;
         }
-        // int key_pressed = GetCharPressed();
-        // if (key_pressed>0){
-        //     text = "You pressed : ";
-        //     text += char(key_pressed);
-        //     key_pressed = GetCharPressed();
-        // }
-
-        // int mouseX = GetMouseX();
-        // int mouseY = GetMouseY();
-        // std::string mousePos = "";
-
-        // if (mouseX && mouseY) {
-        //     mousePos = "mouse is at : " + std::to_string(mouseX) + " , " + std::to_string(mouseY);
-        //     mouseX = GetMouseX();
-        //     mouseY = GetMouseY();
-        // }
+        if (camera.zoom <5.0f){
+            mana = mana-(camera.zoom * 0.03f);
+            draining_mana= true;
+        }else if(mana<300 && camera.zoom > 5.0f){
+            mana = mana + 0.001f;
+            draining_mana = false;
+        }
 
             BeginDrawing();
             ClearBackground(BLUE);
@@ -150,6 +158,7 @@ int main() {
             for (int i = 0; i < 15; i++){
                 DrawTextureRec(trees[i], tree_rect, tree_pos[i], WHITE);
             }
+            
             DrawTextureRec(self_char, player, player_pos, WHITE);
             DrawTexture(cursor_img,GetMouseX(),GetMouseY(),WHITE);
             EndMode2D();
@@ -157,9 +166,19 @@ int main() {
             std::string dist_bw = " Target Distance :  " + std::to_string(distance) + " Target Direction : " + getDirectionToMouse(player_pos);
             DrawText((dist_bw).c_str(),30,520,20,BLACK);
             bars();
-
-           
-            
+          
+            if (draining_mana){
+                    DrawText("draining mana",player_pos.x+20,player_pos.x+20,20,BLACK);
+            }if (health>300.0f){
+                    DrawText("shields up",player_pos.x-20,player_pos.x-20,20,BLACK);
+                    health_timer += GetFrameTime();  // Add time since last frame
+                if (health_timer >= 2.0) {
+                    // Action to perform after 2 seconds
+                    printf("Two seconds have passed!\n");
+                    health = health - 3.0f;
+                    health_timer = 0.0f;
+                }
+            }
             EndDrawing();
         }
 
