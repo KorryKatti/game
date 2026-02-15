@@ -5,22 +5,29 @@ float health = 300.0f;
 float mana = 300.0f;
 double health_timer = 0.0;
 bool draining_mana =false;
+bool is_cast = false;
+Color bloodRed = { 128, 0, 0, 255 }; // Blood Red (common approximation)   
+Color spellColor = RED;
+int number_of_trees = 15;
 
-bool checkCollision(Vector2 player_pos,std::vector<Vector2> trees_pos){
-    Rectangle player_rect = {player_pos.x,player_pos.y,20,40};
-    for (int i=0;i<15;i++){
-        Rectangle tree_rect = {trees_pos[i].x,trees_pos[i].y,20,60};
-            if (CheckCollisionRecs(player_rect, tree_rect)){
-                return true;
-            }
+bool checkCollision(Vector2 player_pos, std::vector<Vector2>& trees_pos){
+    Rectangle player_rect = {player_pos.x, player_pos.y, 20, 40};
+
+    for (int i = 0; i < trees_pos.size(); i++){
+        Rectangle tree_rect = {trees_pos[i].x, trees_pos[i].y, 20, 60};
+
+        if (CheckCollisionRecs(player_rect, tree_rect)){
+            return true;
+        }
     }
     return false;
 }
 
+
 std::vector<Texture2D> tree_spawner(){
-    std::vector<Texture2D> vec(15);
+    std::vector<Texture2D> vec(number_of_trees);
     Image tree_img = LoadImage("assets/tree.png");
-    for (int i=0;i<15;i++){
+    for (int i=0;i<number_of_trees;i++){
         vec[i] = LoadTextureFromImage(tree_img);
     }
     UnloadImage(tree_img);
@@ -29,7 +36,7 @@ std::vector<Texture2D> tree_spawner(){
 
 std::vector<Vector2> tree_positions(){
     // will do later , returns random aroud 15 positons to puit trees at
-    std::vector<Vector2> vec(15);
+    std::vector<Vector2> vec(number_of_trees);
     int lower_bound = 000;  // Minimum value (inclusive)
     int upper_bound = 2000; // Maximum value (inclusive)
 
@@ -37,7 +44,7 @@ std::vector<Vector2> tree_positions(){
     std::mt19937 gen(rd());          // Mersenne Twister generator
     std::uniform_int_distribution<> distr(lower_bound, upper_bound);
 
-    for (int i=0;i<15;i++){
+    for (int i=0;i<number_of_trees;i++){
         float random_x = distr(gen);
         float random_y = distr(gen);
         vec[i] = {random_x,random_y};
@@ -80,8 +87,7 @@ int main() {
     const int screenWidth = 1280;
     const int screenHeight = 720;
 
-    InitWindow(screenWidth, screenHeight, "raylib - basic window");
-
+    InitWindow(screenWidth, screenHeight, "WIZARD DUEL");
     Image island = LoadImage("assets/island.png");
     Texture2D island_img = LoadTextureFromImage(island); 
     Image cursor = LoadImage("assets/cursor.png");
@@ -89,25 +95,39 @@ int main() {
     Image player_self = LoadImage("assets/self_char.png");
     Texture2D self_char = LoadTextureFromImage(player_self);
 
+
+    DisableCursor();
     UnloadImage(island);
     UnloadImage(cursor);
     UnloadImage(player_self);
 
     Rectangle player = { 0, 0, 20, 40 };
-    Vector2 player_pos = {400,280};
+    Vector2 player_pos = {};
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> x_distr(100, 640);  // left side x-range
+    std::uniform_int_distribution<> y_distr(100, 720); // full vertical range
+
+    player_pos.x = x_distr(gen);
+    player_pos.y = y_distr(gen);
     
     Rectangle tree_rect = {0,0,20,60};
     
  
     SetTargetFPS(60);
     Camera2D camera = { 0 };
-    camera.target = (Vector2){ player_pos.x + 10.0f, player_pos.y + 10.0f };
+    camera.target.x = player_pos.x + player.width / 2;
+    camera.target.y = player_pos.y + player.height / 2;
     camera.offset = (Vector2){ player_pos.x + 10.0f, player_pos.y + 10.0f };
     camera.zoom = 7.0f;
 
     std::vector<Texture2D> trees = tree_spawner();
     std::vector<Vector2> tree_pos = tree_positions();
-
+    int ball_x = player_pos.x;
+    int ball_y = player_pos.y;
+    float ball_r = 25.0f;
+    Vector2 mouse_pos = {0,0};
+    Vector2 ball_pos = {ball_x,ball_y};
     // std::string text = "";
     while (!WindowShouldClose()) {  
         if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && mana>12.0f){
@@ -123,6 +143,33 @@ int main() {
         else if (IsKeyDown(KEY_W)) player_pos.y -= 0.5f;
         if (checkCollision(player_pos,tree_pos)){
             player_pos = old_pos;
+        }
+        for (int i = 0; i < tree_pos.size(); i++){
+            Rectangle tree_rect = {tree_pos[i].x, tree_pos[i].y, 20, 60};
+
+            if (CheckCollisionCircleRec(
+                    (Vector2){(float)ball_x, (float)ball_y},
+                    ball_r,
+                    tree_rect))
+            {
+                // Remove tree
+                tree_pos[i] = {0,0};
+
+                // Optional: shrink ball
+                ball_r -= 5.0f;
+
+                break; // IMPORTANT: stop loop after erase
+            }
+        }
+
+
+        if (IsKeyDown(KEY_ONE)){
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
+                if (mana >= 25.0f){
+                is_cast = true;
+                mouse_pos = GetMousePosition();
+                mana = mana - 5.0f;
+                }}
         }
 
         // Camera target follows player
@@ -146,7 +193,7 @@ int main() {
             mana = mana-(camera.zoom * 0.03f);
             draining_mana= true;
         }else if(mana<300 && camera.zoom > 5.0f){
-            mana = mana + 0.001f;
+            mana = mana + 0.01f;
             draining_mana = false;
         }
 
@@ -155,12 +202,45 @@ int main() {
             BeginMode2D(camera);
             HideCursor();
             DrawTexture(island_img, 0, 0, WHITE);
-            for (int i = 0; i < 15; i++){
+            for (int i = 0; i < number_of_trees; i++){
                 DrawTextureRec(trees[i], tree_rect, tree_pos[i], WHITE);
             }
             
             DrawTextureRec(self_char, player, player_pos, WHITE);
             DrawTexture(cursor_img,GetMouseX(),GetMouseY(),WHITE);
+            if (player_pos.x < 0 || player_pos.x > 2000 || player_pos.y < 0 || player_pos.y > 2000) {
+                health = 0.0f;
+            }
+
+            if (is_cast && ball_r > 0.0f){
+                DrawCircle(ball_x, ball_y, ball_r, bloodRed);
+
+                Vector2 direction = {
+                    mouse_pos.x - ball_x,
+                    mouse_pos.y - ball_y
+                };
+
+                float length = sqrt(direction.x * direction.x + direction.y * direction.y);
+
+                if (length > 1.0f)  // avoid jitter near target
+                {
+                    direction.x /= length;
+                    direction.y /= length;
+
+                    float speed = 2.0f;  // adjust speed here
+
+                    ball_x += direction.x * speed;
+                    ball_y += direction.y * speed;
+                }
+
+                ball_r -= 0.1f;
+            }if (ball_r <= 0.0f){
+                is_cast = false;
+                ball_r = 25.0f;
+                ball_x = player_pos.x;
+                ball_y = player_pos.y;
+            }
+
             EndMode2D();
             int distance = sqrt(((GetMouseY()-player_pos.y)*(GetMouseY()-player_pos.y)) + ((GetMouseX()-player_pos.x)*(GetMouseX()-player_pos.x)));
             std::string dist_bw = " Target Distance :  " + std::to_string(distance) + " Target Direction : " + getDirectionToMouse(player_pos);
@@ -179,6 +259,7 @@ int main() {
                     health_timer = 0.0f;
                 }
             }
+
             EndDrawing();
         }
 
