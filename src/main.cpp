@@ -85,14 +85,14 @@ std::string getDirectionToMouse(Vector2 player_pos){
 
 
 
-void bars(){
-    DrawRectangleLines(37, 607 , 300, 10, WHITE);
-    DrawText("HEALTH",37,587,20,GRAY);
-    DrawRectangle(37,607,health,10,RED);
-    DrawRectangleLines(37, 647 , 300, 10, WHITE);
-    DrawText("MANA",37,627,20,GRAY);
-    DrawRectangle(37,647,mana,10,PURPLE);
-}
+// void bars(){
+//     DrawRectangleLines(37, 607 , 300, 10, WHITE);
+//     DrawText("HEALTH",37,587,20,GRAY);
+//     DrawRectangle(37,607,health,10,RED);
+//     DrawRectangleLines(37, 647 , 300, 10, WHITE);
+//     DrawText("MANA",37,627,20,GRAY);
+//     DrawRectangle(37,647,mana,10,PURPLE);
+// }
 
 int main() {
     const int screenWidth = 1280;
@@ -133,7 +133,7 @@ int main() {
     Camera2D camera = { 0 };
     camera.target.x = player_pos.x + player.width / 2;
     camera.target.y = player_pos.y + player.height / 2;
-    camera.offset = (Vector2){ player_pos.x + 10.0f, player_pos.y + 10.0f };
+    camera.offset = (Vector2){ screenWidth / 2.0f, screenHeight / 2.0f };
     camera.zoom = 7.0f;
 
     std::vector<Texture2D> trees = tree_spawner();
@@ -189,12 +189,13 @@ int main() {
                 red_ball.spellColor = bloodRed;
                 red_ball.ball_speed = 2.0f;
                 red_ball.ball_pos = player_pos;
+                red_ball.ball_r = 35.0f;
                 ball_vec.push_back(red_ball);
                 balls_size = ball_vec.size();
                 }}
         }else if (IsKeyDown(KEY_TWO)){
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
-                if (mana >= 30.0f){
+                if (mana >= 35.0f){
                 Ball blue_ball;
                 is_cast = true;
                 blue_ball.mouse_pos = GetMousePosition();
@@ -242,6 +243,10 @@ int main() {
             }
             
             DrawTextureRec(self_char, player, player_pos, WHITE);
+            DrawRectangle((int)player_pos.x - 10, (int)player_pos.y - 20, 40, 5, DARKGRAY);
+            DrawRectangle((int)player_pos.x - 10, (int)player_pos.y - 20, (health / 300.0f) * 40, 5, RED);
+            DrawRectangle((int)player_pos.x - 10, (int)player_pos.y - 13, 40, 5, DARKGRAY);
+            DrawRectangle((int)player_pos.x - 10, (int)player_pos.y - 13, (mana / 300.0f) * 40, 5, PURPLE);
             DrawTexture(cursor_img,GetMouseX(),GetMouseY(),WHITE);
             if (player_pos.x < 0 || player_pos.x > 2000 || player_pos.y < 0 || player_pos.y > 2000) {
                 health = 0.0f;
@@ -303,7 +308,7 @@ int main() {
             int distance = sqrt(((GetMouseY()-player_pos.y)*(GetMouseY()-player_pos.y)) + ((GetMouseX()-player_pos.x)*(GetMouseX()-player_pos.x)));
             std::string dist_bw = " Target Distance :  " + std::to_string(distance) + " Target Direction : " + getDirectionToMouse(player_pos);
             DrawText((dist_bw).c_str(),30,520,20,BLACK);
-            bars();
+            // bars();
           
             if (draining_mana){
                     DrawText("draining mana",player_pos.x+20,player_pos.x+20,20,BLACK);
