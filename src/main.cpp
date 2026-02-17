@@ -6,6 +6,10 @@ float mana = 300.0f;
 double health_timer = 0.0;
 bool draining_mana =false;
 bool is_cast = false;
+// dark souls like animation i think
+float deathTime = 0.0f;
+bool isDead = false;
+bool deathSoundPlayed = false;
 Color bloodRed = { 128, 0, 0, 255 }; // Blood Red (common approximation)   
 Color spellColor = RED;
 int number_of_trees = 115;
@@ -14,6 +18,7 @@ struct Ball{
     Vector2 ball_pos = {};
     Vector2 mouse_pos = {};
     float ball_r = 25.0f;
+    float ball_speed;
 };
 
 bool checkCollision(Vector2 player_pos, std::vector<Vector2>& trees_pos){
@@ -94,6 +99,7 @@ int main() {
     const int screenHeight = 720;
 
     InitWindow(screenWidth, screenHeight, "WIZARD DUEL");
+    InitAudioDevice();
     Image island = LoadImage("assets/island.png");
     Texture2D island_img = LoadTextureFromImage(island); 
     Image cursor = LoadImage("assets/cursor.png");
@@ -137,6 +143,7 @@ int main() {
     float ball_r = 25.0f;
     Vector2 mouse_pos = {0,0};
     Vector2 ball_pos = {ball_x,ball_y};
+    Sound deathSound = LoadSound("assets/music/death.mp3");  // rememmber to change
     // std::string text = "";
     while (!WindowShouldClose()) {  
         if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && mana>12.0f){
@@ -180,6 +187,7 @@ int main() {
                 red_ball.mouse_pos = GetMousePosition();
                 mana = mana - 5.0f;
                 red_ball.spellColor = bloodRed;
+                red_ball.ball_speed = 2.0f;
                 red_ball.ball_pos = player_pos;
                 ball_vec.push_back(red_ball);
                 balls_size = ball_vec.size();
@@ -193,6 +201,7 @@ int main() {
                 mana = mana - 5.0f;
                 blue_ball.spellColor = DARKBLUE;
                 blue_ball.ball_pos = player_pos;
+                blue_ball.ball_speed=4.0f;
                 ball_vec.push_back(blue_ball);
                 balls_size = ball_vec.size();
                 }}
@@ -264,10 +273,8 @@ int main() {
                             direction.x /= length;
                             direction.y /= length;
 
-                            float speed = 2.0f;
-
-                            current_ball.ball_pos.x += direction.x * speed;
-                            current_ball.ball_pos.y += direction.y * speed;
+                            current_ball.ball_pos.x += direction.x * current_ball.ball_speed;
+                            current_ball.ball_pos.y += direction.y * current_ball.ball_speed;
                         }
                     }
                 }
@@ -279,6 +286,17 @@ int main() {
                 for (int i=0;i<ball_vec.size();i++){
                     ball_vec.clear();
                 }
+            }
+
+            if (isDead && deathTime <1.0f){
+                deathTime += GetFrameTime() * 0.5f;
+                if (deathTime > 1.0f) deathTime = 1.0f;
+            }
+
+
+
+            if (health<=0.0f){
+                isDead = true;
             }
 
             EndMode2D();
@@ -298,6 +316,23 @@ int main() {
                     health = health - 3.0f;
                     health_timer = 0.0f;
                 }
+            }
+
+            if (isDead){
+                DrawRectangle(0,0,screenWidth,screenHeight,Fade(BLACK, deathTime));
+                if (deathTime >= 0.9f){
+                    DrawText("YOU DIED",screenWidth/2-100,screenHeight/2-50,50,Fade(RED, deathTime));
+                }
+            }
+
+            if (isDead && !deathSoundPlayed){
+                PlaySound(deathSound);
+                deathSoundPlayed = true;
+            }
+
+            // testing insta kill
+            if (IsKeyDown(KEY_I)){
+                health = health - 50.0f;
             }
 
             EndDrawing();
