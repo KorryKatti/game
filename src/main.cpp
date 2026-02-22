@@ -1,24 +1,30 @@
 #include "raylib.h"
 #include <bits/stdc++.h>
 
-float health = 300.0f;
-float mana = 300.0f;
-double health_timer = 0.0;
-bool draining_mana =false;
-bool is_cast = false;
-// dark souls like animation i think
-float deathTime = 0.0f;
-bool isDead = false;
-bool deathSoundPlayed = false;
-Color bloodRed = { 128, 0, 0, 255 }; // Blood Red (common approximation)   
+struct Character {
+    float health = 300.0f;
+    float mana = 300.0f;
+    double health_timer = 0.0;
+    bool draining_mana = false;
+    bool is_cast = false;
+    float deathTime = 0.0f;
+    bool isDead = false;
+    bool deathSoundPlayed = false;
+    Vector2 pos = {};
+    Rectangle rect = { 0, 0, 20, 40 };
+};
+
+Color bloodRed = { 128, 0, 0, 255 };
 Color spellColor = RED;
 int number_of_trees = 115;
+
 struct Ball{
     Color spellColor = RED;
     Vector2 ball_pos = {};
     Vector2 mouse_pos = {};
     float ball_r = 25.0f;
     float ball_speed;
+    float damage = 0.0f;
 };
 
 bool checkCollision(Vector2 player_pos, std::vector<Vector2>& trees_pos){
@@ -46,13 +52,12 @@ std::vector<Texture2D> tree_spawner(){
 }
 
 std::vector<Vector2> tree_positions(){
-    // will do later , returns random aroud 15 positons to puit trees at
     std::vector<Vector2> vec(number_of_trees);
-    int lower_bound = 000;  // Minimum value (inclusive)
-    int upper_bound = 2000; // Maximum value (inclusive)
+    int lower_bound = 000;
+    int upper_bound = 2000;
 
-    std::random_device rd;           // Non-deterministic random seed
-    std::mt19937 gen(rd());          // Mersenne Twister generator
+    std::random_device rd;
+    std::mt19937 gen(rd());
     std::uniform_int_distribution<> distr(lower_bound, upper_bound);
 
     for (int i=0;i<number_of_trees;i++){
@@ -83,17 +88,6 @@ std::string getDirectionToMouse(Vector2 player_pos){
     return "northeast";
 }
 
-
-
-// void bars(){
-//     DrawRectangleLines(37, 607 , 300, 10, WHITE);
-//     DrawText("HEALTH",37,587,20,GRAY);
-//     DrawRectangle(37,607,health,10,RED);
-//     DrawRectangleLines(37, 647 , 300, 10, WHITE);
-//     DrawText("MANA",37,627,20,GRAY);
-//     DrawRectangle(37,647,mana,10,PURPLE);
-// }
-
 int main() {
     const int screenWidth = 1280;
     const int screenHeight = 720;
@@ -108,57 +102,53 @@ int main() {
     Texture2D self_char = LoadTextureFromImage(player_self);
 
     std::vector<Ball> ball_vec;
-    int balls_size = 0; // lmao
-
+    int balls_size = 0;
 
     DisableCursor();
     UnloadImage(island);
     UnloadImage(cursor);
     UnloadImage(player_self);
 
-    Rectangle player = { 0, 0, 20, 40 };
-    Vector2 player_pos = {};
+    Character player;
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<> x_distr(100, 640);  // left side x-range
-    std::uniform_int_distribution<> y_distr(100, 720); // full vertical range
+    std::uniform_int_distribution<> x_distr(100, 640);
+    std::uniform_int_distribution<> y_distr(100, 720);
 
-    player_pos.x = x_distr(gen);
-    player_pos.y = y_distr(gen);
+    player.pos.x = x_distr(gen);
+    player.pos.y = y_distr(gen);
     
     Rectangle tree_rect = {0,0,20,60};
     
- 
     SetTargetFPS(60);
     Camera2D camera = { 0 };
-    camera.target.x = player_pos.x + player.width / 2;
-    camera.target.y = player_pos.y + player.height / 2;
+    camera.target.x = player.pos.x + player.rect.width / 2;
+    camera.target.y = player.pos.y + player.rect.height / 2;
     camera.offset = (Vector2){ screenWidth / 2.0f, screenHeight / 2.0f };
     camera.zoom = 7.0f;
 
     std::vector<Texture2D> trees = tree_spawner();
     std::vector<Vector2> tree_pos = tree_positions();
-    int ball_x = player_pos.x;
-    int ball_y = player_pos.y;
+    int ball_x = player.pos.x;
+    int ball_y = player.pos.y;
     float ball_r = 25.0f;
     Vector2 mouse_pos = {0,0};
-    Vector2 ball_pos = {ball_x,ball_y};
-    Sound deathSound = LoadSound("assets/music/death.mp3");  // rememmber to change
-    // std::string text = "";
+    Vector2 ball_pos = {(float)ball_x,(float)ball_y};
+    Sound deathSound = LoadSound("assets/music/death.mp3");
+
     while (!WindowShouldClose()) {  
-        if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && mana>12.0f){
-            mana = mana - 10.0f;
-            health = health+2.0f;
+        if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && player.mana>12.0f){
+            player.mana = player.mana - 10.0f;
+            player.health = player.health+2.0f;
         }
 
-               // Player movement
-        Vector2 old_pos = player_pos;
-        if (IsKeyDown(KEY_D)) player_pos.x += 0.5f;
-        else if (IsKeyDown(KEY_A)) player_pos.x -= 0.5f;
-        else if (IsKeyDown(KEY_S)) player_pos.y += 0.5f;
-        else if (IsKeyDown(KEY_W)) player_pos.y -= 0.5f;
-        if (checkCollision(player_pos,tree_pos)){
-            player_pos = old_pos;
+        Vector2 old_pos = player.pos;
+        if (IsKeyDown(KEY_D)) player.pos.x += 0.5f;
+        else if (IsKeyDown(KEY_A)) player.pos.x -= 0.5f;
+        else if (IsKeyDown(KEY_S)) player.pos.y += 0.5f;
+        else if (IsKeyDown(KEY_W)) player.pos.y -= 0.5f;
+        if (checkCollision(player.pos,tree_pos)){
+            player.pos = old_pos;
         }
         for (int b = 0; b < ball_vec.size(); b++) {
             for (int t = 0; t < tree_pos.size(); t++) {
@@ -170,67 +160,62 @@ int main() {
                         ball_vec[b].ball_r,
                         tree_rect))
                 {
-                    if (ball_vec[b].ball_r >= 4.0f){tree_pos[t] = {0, 0};}          // remove tree
-                    ball_vec[b].ball_r -= 5.0f;    // shrink ball
-                    break; // stop checking trees for this ball
+                    if (ball_vec[b].ball_r >= 4.0f){tree_pos[t] = {0, 0};}
+                    ball_vec[b].ball_r -= 5.0f;
+                    break;
                 }
             }
         }
 
-
-
         if (IsKeyDown(KEY_ONE)){
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
-                if (mana >= 25.0f){
+                if (player.mana >= 25.0f){
                 Ball red_ball;
-                is_cast = true;
+                player.is_cast = true;
                 red_ball.mouse_pos = GetMousePosition();
-                mana = mana - 5.0f;
+                player.mana = player.mana - 5.0f;
                 red_ball.spellColor = bloodRed;
                 red_ball.ball_speed = 2.0f;
-                red_ball.ball_pos = player_pos;
+                red_ball.ball_pos = player.pos;
                 red_ball.ball_r = 35.0f;
+                red_ball.damage = 1.0f*red_ball.ball_r;
                 ball_vec.push_back(red_ball);
                 balls_size = ball_vec.size();
                 }}
         }else if (IsKeyDown(KEY_TWO)){
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
-                if (mana >= 35.0f){
+                if (player.mana >= 35.0f){
                 Ball blue_ball;
-                is_cast = true;
+                player.is_cast = true;
                 blue_ball.mouse_pos = GetMousePosition();
-                mana = mana - 5.0f;
+                player.mana = player.mana - 5.0f;
                 blue_ball.spellColor = DARKBLUE;
-                blue_ball.ball_pos = player_pos;
+                blue_ball.ball_pos = player.pos;
                 blue_ball.ball_speed=4.0f;
+                blue_ball.damage = 1.0f * blue_ball.ball_r;
                 ball_vec.push_back(blue_ball);
                 balls_size = ball_vec.size();
                 }}
         }
 
-        // Camera target follows player
-        camera.target = (Vector2){ player_pos.x + 20, player_pos.y + 20 };
+        camera.target = (Vector2){ player.pos.x + 20, player.pos.y + 20 };
 
-        // Camera zoom controls
-        // Uses log scaling to provide consistent zoom speed
-        // camera.zoom = expf(logf(camera.zoom) + ((float)GetMouseWheelMove()*0.1f));
         if (IsKeyDown(KEY_Z)){camera.zoom = expf(logf(camera.zoom + 0.1f));}
         else if (IsKeyDown(KEY_X)){camera.zoom = expf(logf(camera.zoom - 0.1f));}
 
         if (camera.zoom > 10.0f) camera.zoom = 10.0f;
         else if (camera.zoom < 1.5f) camera.zoom = 1.5f;
 
-        // Camera reset (zoom and rotation)
         if (IsKeyPressed(KEY_R))
         {
             camera.zoom = 9.9f;
         }
         if (camera.zoom <5.0f){
-            mana = mana-(camera.zoom * 0.03f);
-            draining_mana= true;
-        }else if(mana<300 && camera.zoom > 5.0f){
-            mana = mana + 0.01f;
-            draining_mana = false;
+            player.mana = player.mana-(camera.zoom * 0.03f);
+            player.draining_mana= true;
+        }else if(player.mana<300 && camera.zoom > 5.0f){
+            player.mana = player.mana + 0.01f;
+            player.draining_mana = false;
         }
 
             BeginDrawing();
@@ -242,21 +227,21 @@ int main() {
                 DrawTextureRec(trees[i], tree_rect, tree_pos[i], WHITE);
             }
             
-            DrawTextureRec(self_char, player, player_pos, WHITE);
-            DrawRectangle((int)player_pos.x - 10, (int)player_pos.y - 20, 40, 5, DARKGRAY);
-            DrawRectangle((int)player_pos.x - 10, (int)player_pos.y - 20, (health / 300.0f) * 40, 5, RED);
-            DrawRectangle((int)player_pos.x - 10, (int)player_pos.y - 13, 40, 5, DARKGRAY);
-            DrawRectangle((int)player_pos.x - 10, (int)player_pos.y - 13, (mana / 300.0f) * 40, 5, PURPLE);
+            DrawTextureRec(self_char, player.rect, player.pos, WHITE);
+            DrawRectangle((int)player.pos.x - 10, (int)player.pos.y - 20, 40, 5, DARKGRAY);
+            DrawRectangle((int)player.pos.x - 10, (int)player.pos.y - 20, (player.health / 300.0f) * 40, 5, RED);
+            DrawRectangle((int)player.pos.x - 10, (int)player.pos.y - 13, 40, 5, DARKGRAY);
+            DrawRectangle((int)player.pos.x - 10, (int)player.pos.y - 13, (player.mana / 300.0f) * 40, 5, PURPLE);
             DrawTexture(cursor_img,GetMouseX(),GetMouseY(),WHITE);
-            if (player_pos.x < 0 || player_pos.x > 2000 || player_pos.y < 0 || player_pos.y > 2000) {
-                health = 0.0f;
+            if (player.pos.x < 0 || player.pos.x > 2000 || player.pos.y < 0 || player.pos.y > 2000) {
+                player.health = 0.0f;
             }
 
-            if (is_cast && ball_r > 0.0f && balls_size!=0){
+            if (player.is_cast && ball_r > 0.0f && balls_size!=0){
                 if (!ball_vec.empty()){
                     for (int i = 0; i < ball_vec.size(); i++)
                     {
-                        Ball& current_ball = ball_vec[i];   // reference, not copy!
+                        Ball& current_ball = ball_vec[i];
 
                         DrawCircle(current_ball.ball_pos.x,
                                 current_ball.ball_pos.y,
@@ -284,60 +269,55 @@ int main() {
                     }
                 }
             }if (ball_r <= 0.0f){
-                is_cast = false;
+                player.is_cast = false;
                 ball_r = 25.0f;
-                ball_x = player_pos.x;
-                ball_y = player_pos.y;
+                ball_x = player.pos.x;
+                ball_y = player.pos.y;
                 for (int i=0;i<ball_vec.size();i++){
                     ball_vec.clear();
                 }
             }
 
-            if (isDead && deathTime <1.0f){
-                deathTime += GetFrameTime() * 0.5f;
-                if (deathTime > 1.0f) deathTime = 1.0f;
+            if (player.isDead && player.deathTime <1.0f){
+                player.deathTime += GetFrameTime() * 0.5f;
+                if (player.deathTime > 1.0f) player.deathTime = 1.0f;
             }
 
-
-
-            if (health<=0.0f){
-                isDead = true;
+            if (player.health<=0.0f){
+                player.isDead = true;
             }
 
             EndMode2D();
-            int distance = sqrt(((GetMouseY()-player_pos.y)*(GetMouseY()-player_pos.y)) + ((GetMouseX()-player_pos.x)*(GetMouseX()-player_pos.x)));
-            std::string dist_bw = " Target Distance :  " + std::to_string(distance) + " Target Direction : " + getDirectionToMouse(player_pos);
+            int distance = sqrt(((GetMouseY()-player.pos.y)*(GetMouseY()-player.pos.y)) + ((GetMouseX()-player.pos.x)*(GetMouseX()-player.pos.x)));
+            std::string dist_bw = " Target Distance :  " + std::to_string(distance) + " Target Direction : " + getDirectionToMouse(player.pos);
             DrawText((dist_bw).c_str(),30,520,20,BLACK);
-            // bars();
           
-            if (draining_mana){
-                    DrawText("draining mana",player_pos.x+20,player_pos.x+20,20,BLACK);
-            }if (health>300.0f){
-                    DrawText("shields up",player_pos.x-20,player_pos.x-20,20,BLACK);
-                    health_timer += GetFrameTime();  // Add time since last frame
-                if (health_timer >= 2.0) {
-                    // Action to perform after 2 seconds
+            if (player.draining_mana){
+                    DrawText("draining mana",player.pos.x+20,player.pos.x+20,20,BLACK);
+            }if (player.health>300.0f){
+                    DrawText("shields up",player.pos.x-20,player.pos.x-20,20,BLACK);
+                    player.health_timer += GetFrameTime();
+                if (player.health_timer >= 2.0) {
                     printf("Two seconds have passed!\n");
-                    health = health - 3.0f;
-                    health_timer = 0.0f;
+                    player.health = player.health - 3.0f;
+                    player.health_timer = 0.0f;
                 }
             }
 
-            if (isDead){
-                DrawRectangle(0,0,screenWidth,screenHeight,Fade(BLACK, deathTime));
-                if (deathTime >= 0.9f){
-                    DrawText("YOU DIED",screenWidth/2-100,screenHeight/2-50,50,Fade(RED, deathTime));
+            if (player.isDead){
+                DrawRectangle(0,0,screenWidth,screenHeight,Fade(BLACK, player.deathTime));
+                if (player.deathTime >= 0.6f){
+                    DrawText("YOU DIED",screenWidth/2-100,screenHeight/2-50,50,Fade(RED, player.deathTime));
                 }
             }
 
-            if (isDead && !deathSoundPlayed){
+            if (player.isDead && !player.deathSoundPlayed){
                 PlaySound(deathSound);
-                deathSoundPlayed = true;
+                player.deathSoundPlayed = true;
             }
 
-            // testing insta kill
             if (IsKeyDown(KEY_I)){
-                health = health - 50.0f;
+                player.health = player.health - 50.0f;
             }
 
             EndDrawing();
