@@ -18,6 +18,8 @@ Color bloodRed = { 128, 0, 0, 255 };
 Color spellColor = RED;
 int number_of_trees = 115;
 
+std::string state = "MENU";
+
 struct Ball{
     Color spellColor = RED;
     Vector2 ball_pos = {};
@@ -104,7 +106,6 @@ int main() {
     std::vector<Ball> ball_vec;
     int balls_size = 0;
 
-    DisableCursor();
     UnloadImage(island);
     UnloadImage(cursor);
     UnloadImage(player_self);
@@ -219,107 +220,162 @@ int main() {
         }
 
             BeginDrawing();
-            ClearBackground(BLUE);
-            BeginMode2D(camera);
-            HideCursor();
-            DrawTexture(island_img, 0, 0, WHITE);
-            for (int i = 0; i < number_of_trees; i++){
-                DrawTextureRec(trees[i], tree_rect, tree_pos[i], WHITE);
+            if (state == "MENU"){
+                ShowCursor();
+                ClearBackground(BLACK);
+
+                DrawText("WIZARD DUEL", screenWidth/2 - 180, 120, 50, WHITE);
+
+                Rectangle singleBtn = {screenWidth/2 - 150, 260, 300, 60};
+                Rectangle quitBtn   = {screenWidth/2 - 150, 350, 300, 60};
+
+                Vector2 mouse = GetMousePosition();
+
+                bool singleHover = CheckCollisionPointRec(mouse, singleBtn);
+                bool quitHover   = CheckCollisionPointRec(mouse, quitBtn);
+
+                DrawRectangleRec(singleBtn, singleHover ? MAROON : RED);
+                DrawRectangleRec(quitBtn,   quitHover   ? DARKGRAY : GRAY);
+
+                DrawText("SINGLEPLAYER",
+                        singleBtn.x + 55,
+                        singleBtn.y + 18,
+                        25,
+                        WHITE);
+
+                DrawText("QUIT",
+                        quitBtn.x + 115,
+                        quitBtn.y + 18,
+                        25,
+                        WHITE);
+
+                if (singleHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
+                    state = "SINGLE";
+                }
+
+                if (quitHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
+                    break;
+                }
             }
-            
-            DrawTextureRec(self_char, player.rect, player.pos, WHITE);
-            DrawRectangle((int)player.pos.x - 10, (int)player.pos.y - 20, 40, 5, DARKGRAY);
-            DrawRectangle((int)player.pos.x - 10, (int)player.pos.y - 20, (player.health / 300.0f) * 40, 5, RED);
-            DrawRectangle((int)player.pos.x - 10, (int)player.pos.y - 13, 40, 5, DARKGRAY);
-            DrawRectangle((int)player.pos.x - 10, (int)player.pos.y - 13, (player.mana / 300.0f) * 40, 5, PURPLE);
-            DrawTexture(cursor_img,GetMouseX(),GetMouseY(),WHITE);
-            if (player.pos.x < 0 || player.pos.x > 2000 || player.pos.y < 0 || player.pos.y > 2000) {
-                player.health = 0.0f;
-            }
+            else if (state=="SINGLE"){
+                HideCursor();
+                ClearBackground(BLUE);
+                BeginMode2D(camera);
+                HideCursor();
+                DrawTexture(island_img, 0, 0, WHITE);
+                for (int i = 0; i < number_of_trees; i++){
+                 
+                    DrawTextureRec(trees[i], tree_rect, tree_pos[i], WHITE);
+                }
+                
+                DrawTextureRec(self_char, player.rect, player.pos, WHITE);
+                DrawRectangle((int)player.pos.x - 10, (int)player.pos.y - 20, 40, 5, DARKGRAY);
+                DrawRectangle((int)player.pos.x - 10, (int)player.pos.y - 20, (player.health / 300.0f) * 40, 5, RED);
+                DrawRectangle((int)player.pos.x - 10, (int)player.pos.y - 13, 40, 5, DARKGRAY);
+                DrawRectangle((int)player.pos.x - 10, (int)player.pos.y - 13, (player.mana / 300.0f) * 40, 5, PURPLE);
+                DrawTexture(cursor_img,GetMouseX(),GetMouseY(),WHITE);
+                if (player.pos.x < 0 || player.pos.x > 2000 || player.pos.y < 0 || player.pos.y > 2000) {
+                    player.health = 0.0f;
+                }
 
-            if (player.is_cast && ball_r > 0.0f && balls_size!=0){
-                if (!ball_vec.empty()){
-                    for (int i = 0; i < ball_vec.size(); i++)
-                    {
-                        Ball& current_ball = ball_vec[i];
-
-                        DrawCircle(current_ball.ball_pos.x,
-                                current_ball.ball_pos.y,
-                                current_ball.ball_r,
-                                current_ball.spellColor);
-
-                        Vector2 direction = {
-                            current_ball.mouse_pos.x - current_ball.ball_pos.x,
-                            current_ball.mouse_pos.y - current_ball.ball_pos.y
-                        };
-
-                        float length = sqrt(direction.x * direction.x +
-                                            direction.y * direction.y);
-
-                        current_ball.ball_r -= 0.1f;
-
-                        if (length > 1.0f)
+                if (player.is_cast && ball_r > 0.0f && balls_size!=0){
+                    if (!ball_vec.empty()){
+                        for (int i = 0; i < ball_vec.size(); i++)
                         {
-                            direction.x /= length;
-                            direction.y /= length;
+                            Ball& current_ball = ball_vec[i];
 
-                            current_ball.ball_pos.x += direction.x * current_ball.ball_speed;
-                            current_ball.ball_pos.y += direction.y * current_ball.ball_speed;
+                            DrawCircle(current_ball.ball_pos.x,
+                                    current_ball.ball_pos.y,
+                                    current_ball.ball_r,
+                                    current_ball.spellColor);
+
+                            Vector2 direction = {
+                                current_ball.mouse_pos.x - current_ball.ball_pos.x,
+                                current_ball.mouse_pos.y - current_ball.ball_pos.y
+                            };
+
+                            float length = sqrt(direction.x * direction.x +
+                                                direction.y * direction.y);
+
+                            current_ball.ball_r -= 0.1f;
+
+                            if (length > 1.0f)
+                            {
+                                direction.x /= length;
+                                direction.y /= length;
+
+                                current_ball.ball_pos.x += direction.x * current_ball.ball_speed;
+                                current_ball.ball_pos.y += direction.y * current_ball.ball_speed;
+                            }
                         }
                     }
+                }if (ball_r <= 0.0f){
+                    player.is_cast = false;
+                    ball_r = 25.0f;
+                    ball_x = player.pos.x;
+                    ball_y = player.pos.y;
+                    for (int i=0;i<ball_vec.size();i++){
+                        ball_vec.clear();
+                    }
                 }
-            }if (ball_r <= 0.0f){
-                player.is_cast = false;
-                ball_r = 25.0f;
-                ball_x = player.pos.x;
-                ball_y = player.pos.y;
-                for (int i=0;i<ball_vec.size();i++){
+
+                if (player.isDead && player.deathTime <1.0f){
+                    player.deathTime += GetFrameTime() * 0.5f;
+                    if (player.deathTime > 1.0f) player.deathTime = 1.0f;
+                }
+
+                if (player.health<=0.0f){
+                    player.isDead = true;
+                }
+
+                EndMode2D();
+                int distance = sqrt(((GetMouseY()-player.pos.y)*(GetMouseY()-player.pos.y)) + ((GetMouseX()-player.pos.x)*(GetMouseX()-player.pos.x)));
+                std::string dist_bw = " Target Distance :  " + std::to_string(distance) + " Target Direction : " + getDirectionToMouse(player.pos);
+                DrawText((dist_bw).c_str(),30,520,20,BLACK);
+            
+                if (player.draining_mana){
+                        DrawText("draining mana",player.pos.x+20,player.pos.x+20,20,BLACK);
+                }if (player.health>300.0f){
+                        DrawText("shields up",player.pos.x-20,player.pos.x-20,20,BLACK);
+                        player.health_timer += GetFrameTime();
+                    if (player.health_timer >= 2.0) {
+                        printf("Two seconds have passed!\n");
+                        player.health = player.health - 3.0f;
+                        player.health_timer = 0.0f;
+                    }
+                }
+
+                if (player.isDead){
+                    DrawRectangle(0,0,screenWidth,screenHeight,Fade(BLACK, player.deathTime));
+                    if (player.deathTime >= 0.6f){
+                        DrawText("YOU DIED",screenWidth/2-100,screenHeight/2-50,50,Fade(RED, player.deathTime));
+                    }
+                    
+                }
+
+                if (player.isDead && player.deathTime >= 1.0f) {
+                    state = "MENU";
+
+                    // reset player
+                    player.health = 300.0f;
+                    player.mana = 300.0f;
+                    player.isDead = false;
+                    player.deathSoundPlayed = false;
+                    player.deathTime = 0.0f;
+
                     ball_vec.clear();
                 }
-            }
 
-            if (player.isDead && player.deathTime <1.0f){
-                player.deathTime += GetFrameTime() * 0.5f;
-                if (player.deathTime > 1.0f) player.deathTime = 1.0f;
-            }
-
-            if (player.health<=0.0f){
-                player.isDead = true;
-            }
-
-            EndMode2D();
-            int distance = sqrt(((GetMouseY()-player.pos.y)*(GetMouseY()-player.pos.y)) + ((GetMouseX()-player.pos.x)*(GetMouseX()-player.pos.x)));
-            std::string dist_bw = " Target Distance :  " + std::to_string(distance) + " Target Direction : " + getDirectionToMouse(player.pos);
-            DrawText((dist_bw).c_str(),30,520,20,BLACK);
-          
-            if (player.draining_mana){
-                    DrawText("draining mana",player.pos.x+20,player.pos.x+20,20,BLACK);
-            }if (player.health>300.0f){
-                    DrawText("shields up",player.pos.x-20,player.pos.x-20,20,BLACK);
-                    player.health_timer += GetFrameTime();
-                if (player.health_timer >= 2.0) {
-                    printf("Two seconds have passed!\n");
-                    player.health = player.health - 3.0f;
-                    player.health_timer = 0.0f;
+                if (player.isDead && !player.deathSoundPlayed){
+                    PlaySound(deathSound);
+                    player.deathSoundPlayed = true;
                 }
-            }
 
-            if (player.isDead){
-                DrawRectangle(0,0,screenWidth,screenHeight,Fade(BLACK, player.deathTime));
-                if (player.deathTime >= 0.6f){
-                    DrawText("YOU DIED",screenWidth/2-100,screenHeight/2-50,50,Fade(RED, player.deathTime));
+                if (IsKeyDown(KEY_I)){
+                    player.health = player.health - 50.0f;
                 }
-            }
 
-            if (player.isDead && !player.deathSoundPlayed){
-                PlaySound(deathSound);
-                player.deathSoundPlayed = true;
             }
-
-            if (IsKeyDown(KEY_I)){
-                player.health = player.health - 50.0f;
-            }
-
             EndDrawing();
         }
 
