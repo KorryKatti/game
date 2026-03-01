@@ -128,7 +128,33 @@ bool SetupHost(){
 
 bool SetupClient() {
     // create a client host
-    clientHost
+    clientHost = enet_host_create(
+        NULL,
+        1,
+        2,
+        0,
+        0
+    );
+    if (clientHost == NULL){
+        printf("failed to create client host\n");
+        return false;
+    }
+
+    ENetAddress address;
+    enet_address_set_host(&address,SERVER_IP);
+    address.port = SERVER_PORT;
+
+    serverPeer = enet_host_connect(clientHost,
+        &address,
+        2,
+        0
+    );
+    if (serverPeer == NULL){
+        printf("failed to connect to server");
+        return false;
+    }
+    printf("Connecting to %s:%d...\n",SERVER_IP,SERVER_PORT);
+    return true;
 }
 
 int main() {
@@ -372,6 +398,7 @@ int main() {
             }
         }
         else if (state=="SINGLE"){
+            BeginDrawing();
             HideCursor();
             ClearBackground(BLUE);
             BeginMode2D(camera);
@@ -514,23 +541,294 @@ int main() {
             }
         EndDrawing();
     } else if (state == "HOST") {
-            // display connecting
-            BeginDrawing();
-            ClearBackground(BLACK);
-            DrawText("HOSTING GAME...",screenWidth/2-150,screenHeight/2,30,WHITE);
-            DrawText("waiting for other player to join",screenWidth/2-100,screenHeight/2+50,20,GRAY);
-            EndDrawing();
-    }else if (state == "JOIN") {
-    // Display connecting screen
         BeginDrawing();
         ClearBackground(BLACK);
-        DrawText("JOINING GAME...", screenWidth/2 - 150, screenHeight/2, 30, WHITE);
-        DrawText("Connecting to host...", screenWidth/2 - 140, screenHeight/2 + 50, 20, GRAY);
-        EndDrawing();
+        
+        if (connectionState == "DISCONNECTED") {
+            DrawText("Starting server...", screenWidth/2 - 120, screenHeight/2, 30, WHITE);
+            EndDrawing();
+            
+            if (SetupHost()) {
+                connectionState = "HOSTING";
+            } else {
+                state = "MENU";
+                connectionState = "DISCONNECTED";
+            }
+        }
+        else if (connectionState == "HOSTING") {
+            DrawText("HOSTING GAME...", screenWidth/2 - 150, screenHeight/2, 30, WHITE);
+            DrawText("Waiting for player to join", screenWidth/2 - 180, screenHeight/2 + 50, 20, GRAY);
+            EndDrawing();
+            
+            // Check for new connections
+            ENetEvent event;
+            while (enet_host_service(serverHost, &event, 0) > 0) {
+                if (event.type == ENET_EVENT_TYPE_CONNECT) {
+                    printf("Client connected!\n");
+                    clientPeer = event.peer;
+                    connectionState = "CONNECTED";
+                    
+                    // Start the game
+                    all_players.clear();
+                    all_players.push_back(player);
+                    all_players[0].is_local = true;
+                    
+                    // Add opponent (will be updated by network)
+                    Character opponent;
+                    opponent.pos.x = x_distr(gen);
+                    opponent.pos.y = y_distr(gen);
+                    opponent.is_local = false;
+                    all_players.push_back(opponent);
+                    
+                    state = "MULTIPLAYER";
+                }
+            }
+        }
+    }
+    else if (state == "JOIN") {
+        BeginDrawing();
+        ClearBackground(BLACK);
+        
+        if (connectionState == "DISCONNECTED") {
+            DrawText("Connecting...", screenWidth/2 - 100, screenHeight/2, 30, WHITE);
+            EndDrawing();
+            
+            if (SetupClient()) {
+                connectionState = "JOINING";
+            } else {
+                state = "MENU";
+                connectionState = "DISCONNECTED";
+            }
+        }
+        else if (connectionState == "JOINING") {
+            DrawText("JOINING GAME...", screenWidth/2 - 150, screenHeight/2, 30, WHITE);
+            DrawText("Connecting to host...", screenWidth/2 - 140, screenHeight/2 + 50, 20, GRAY);
+            EndDrawing();
+            
+            // Check connection status
+            ENetEvent event;
+            while (enet_host_service(clientHost, &event, 0) > 0) {
+                if (event.type == ENET_EVENT_TYPE_CONNECT) {
+                    printf("Connected to server!\n");
+                    connectionState = "CONNECTED";
+                    
+                    // Start the game
+                    all_players.clear();
+                    all_players.push_back(player);
+                    all_players[0].is_local = true;
+                    
+                    // Add opponent (will be updated by network)
+                    Character opponent;
+                    opponent.pos.x = x_distr(gen);
+                    opponent.pos.y = y_distr(gen);
+                    opponent.is_local = false;
+                    all_players.push_back(opponent);
+                    
+                    state = "MULTIPLAYER";
+                }
+            }
+        }else if (state=="MULTIPLAYER"){
+            // receive updates from other player
+            ENetEvent event;
+            if (clientHost != nullptr){
+                while (enet_host_service(clientHost,&event,0)>0){
+                    if (event.type == ENET_EVENT_TYPE_RECEIVE){
+                        PositionPacket* posPacket = (PositionPacket*)event.packet->data;
+                        all_players[1].pos.x = posPacket->x;
+                        all_players[1].pos.y = posPacket->y;
+                        enet_packet_destroy(event.packet);
+                    }
+                }
+            }else if (serverHost != nullptr){
+                while (enet_host_service(serverHost,&event,0)>0){
+                    if (event.type == ENET_EVENT_TYPE_RECEIVE){
+                        PositionPacket* posPacket = (PositionPacket*)event.packet->data;
+                        all_players[1].pos.x = posPacket->x;
+                        all_players[1].pos.y = posPacket->y;
+                        enet_packet_destroy(event.packet);
+                    }
+                }
+            }
+                BeginDrawing();
+            HideCursor();
+            ClearBackground(BLUE);
+            BeginMode2D(camera);
+            
+            // Draw world
+            DrawTexture(island_img, 0, 0, WHITE);
+            for (int i = 0; i < number_of_trees; i++){
+                DrawTextureRec(trees[i], tree_rect, tree_pos[i], WHITE);
+            }
+            
+            // Draw all players according to number of players in array
+            for (int i = 0; i < all_players.size(); i++) {
+                // Draw player with appropriate color/tint
+                Color playerTint = all_players[i].is_local ? WHITE : GRAY;
+                DrawTextureRec(self_char, all_players[i].rect, all_players[i].pos, playerTint);
+                
+                // Draw health and mana bars for each player
+                DrawRectangle((int)all_players[i].pos.x - 10, (int)all_players[i].pos.y - 20, 40, 5, DARKGRAY);
+                DrawRectangle((int)all_players[i].pos.x - 10, (int)all_players[i].pos.y - 20, (all_players[i].health / 300.0f) * 40, 5, RED);
+                DrawRectangle((int)all_players[i].pos.x - 10, (int)all_players[i].pos.y - 13, 40, 5, DARKGRAY);
+                DrawRectangle((int)all_players[i].pos.x - 10, (int)all_players[i].pos.y - 13, (all_players[i].mana / 300.0f) * 40, 5, PURPLE);
+            }
+            
+            // Draw cursor in world space
+            DrawTexture(cursor_img, mouse_world.x - 10, mouse_world.y - 10, WHITE);
+            
+            // Check boundaries for local player
+            if (all_players[0].pos.x < 0 || all_players[0].pos.x > 2000 || 
+                all_players[0].pos.y < 0 || all_players[0].pos.y > 2000) {
+                all_players[0].health = 0.0f;
+            }
 
+            // Update and draw balls
+            if (all_players[0].is_cast && !ball_vec.empty()){
+                for (int i = 0; i < ball_vec.size(); i++)
+                {
+                    Ball& current_ball = ball_vec[i];
+
+                    DrawCircle(current_ball.ball_pos.x,
+                            current_ball.ball_pos.y,
+                            current_ball.ball_r,
+                            current_ball.spellColor);
+
+                    Vector2 direction = {
+                        current_ball.target_pos.x - current_ball.ball_pos.x,
+                        current_ball.target_pos.y - current_ball.ball_pos.y
+                    };
+
+                    float length = sqrt(direction.x * direction.x +
+                                      direction.y * direction.y);
+
+                    current_ball.ball_r -= 0.1f;
+
+                    if (length > 1.0f)
+                    {
+                        direction.x /= length;
+                        direction.y /= length;
+
+                        current_ball.ball_pos.x += direction.x * current_ball.ball_speed;
+                        current_ball.ball_pos.y += direction.y * current_ball.ball_speed;
+                    }
+                }
+            }
+            
+            if (ball_vec.empty()) {
+                all_players[0].is_cast = false;
+            }
+
+            // Death animation for all players
+            for (int i = 0; i < all_players.size(); i++) {
+                if (all_players[i].isDead && all_players[i].deathTime < 1.0f){
+                    all_players[i].deathTime += GetFrameTime() * 0.5f;
+                    if (all_players[i].deathTime > 1.0f) all_players[i].deathTime = 1.0f;
+                }
+
+                if (all_players[i].health <= 0.0f){
+                    all_players[i].isDead = true;
+                }
+            }
+
+            EndMode2D();
+            
+            // UI text (screen space) - using local player for reference
+            float distance = sqrt(pow(mouse_world.y - all_players[0].pos.y, 2) + 
+                                 pow(mouse_world.x - all_players[0].pos.x, 2));
+            std::string dist_bw = "Target Distance: " + std::to_string((int)distance) + 
+                                 "  Direction: " + getDirectionToMouse(all_players[0].pos, mouse_world) +
+                                 "  Players: " + std::to_string(all_players.size());
+            DrawText(dist_bw.c_str(), 30, 520, 20, BLACK);
+        
+            if (all_players[0].draining_mana){
+                DrawText("DRAINING MANA", 30, 550, 20, BLACK);
+            }
+            if (all_players[0].health > 300.0f){
+                DrawText("SHIELDS UP", 30, 580, 20, BLACK);
+                all_players[0].health_timer += GetFrameTime();
+                if (all_players[0].health_timer >= 2.0) {
+                    all_players[0].health = all_players[0].health - 3.0f;
+                    all_players[0].health_timer = 0.0f;
+                }
+            }
+
+            // Death screen (only for local player)
+            if (all_players[0].isDead){
+                DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, all_players[0].deathTime));
+                if (all_players[0].deathTime >= 0.6f){
+                    DrawText("YOU DIED", screenWidth/2 - 100, screenHeight/2 - 50, 50, Fade(RED, all_players[0].deathTime));
+                }
+            }
+
+            // Death sound and reset (only for local player)
+            if (all_players[0].isDead && !all_players[0].deathSoundPlayed){
+                PlaySound(deathSound);
+                all_players[0].deathSoundPlayed = true;
+            }
+
+            if (all_players[0].isDead && all_players[0].deathTime >= 1.0f) {
+                state = "MENU";
+                // reset local player
+                all_players[0].health = 300.0f;
+                all_players[0].mana = 300.0f;
+                all_players[0].isDead = false;
+                all_players[0].deathSoundPlayed = false;
+                all_players[0].deathTime = 0.0f;
+                ball_vec.clear();
+                
+                // Reset opponent for testing
+                if (all_players.size() > 1) {
+                    all_players[1].health = 300.0f;
+                    all_players[1].mana = 300.0f;
+                    all_players[1].isDead = false;
+                    all_players[1].deathSoundPlayed = false;
+                    all_players[1].deathTime = 0.0f;
+                }
+            }
+
+            // Debug key
+            if (IsKeyDown(KEY_I)){
+                all_players[0].health = all_players[0].health - 50.0f;
+            }
+        EndDrawing();
+        
+        Vector2 old_pos = all_players[0].pos;
+        if (all_players[0].is_local){
+        if (IsKeyDown(KEY_D)) all_players[0].pos.x += 0.5f;
+        else if (IsKeyDown(KEY_A)) all_players[0].pos.x -= 0.5f;
+        else if (IsKeyDown(KEY_S)) all_players[0].pos.y += 0.5f;
+        else if (IsKeyDown(KEY_W)) all_players[0].pos.y -= 0.5f;
+        if (checkCollision(all_players[0].pos,tree_pos)){
+            all_players[0].pos = old_pos;
+        }
     }
-    
+
+    if (all_players[0].pos.x != old_pos.x || all_players[0].pos.y != old_pos.y){
+        PositionPacket posPacket;
+        posPacket.x = all_players[0].pos.x;
+        posPacket.y = all_players[0].pos.y;
+
+        ENetPacket* packet = enet_packet_create(
+            &posPacket,
+            sizeof(PositionPacket),
+            ENET_PACKET_FLAG_RELIABLE
+        );
+
+        if (clientHost != nullptr && serverPeer != nullptr){
+            enet_peer_send(serverPeer,0,packet);
+        }else if (serverHost!=nullptr && clientPeer != nullptr){
+            enet_peer_send(clientPeer,0,packet);
+        }
     }
+    }
+    }
+    // Network cleanup
+if (serverHost != nullptr) {
+    enet_host_destroy(serverHost);
+}
+if (clientHost != nullptr) {
+    enet_host_destroy(clientHost);
+}
     // Cleanup
     for (auto& t : trees) {
         UnloadTexture(t);
