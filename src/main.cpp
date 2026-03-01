@@ -767,6 +767,12 @@ int main() {
                 all_players[0].deathSoundPlayed = true;
             }
 
+
+            DrawText(TextFormat("Ping: %d ms", 
+                clientPeer ? clientPeer->roundTripTime : 
+                (serverPeer ? serverPeer->roundTripTime : 0)), 
+                30, 600, 20, BLACK);
+                
             if (all_players[0].isDead && all_players[0].deathTime >= 1.0f) {
                 state = "MENU";
                 // reset local player
