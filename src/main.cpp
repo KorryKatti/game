@@ -109,9 +109,12 @@ std::string getDirectionToMouse(Vector2 player_pos, Vector2 mouse_world){
 }
 
 bool SetupHost(){
+    ENetAddress address;
+    address.host = ENET_HOST_ANY;
+    address.port = SERVER_PORT;
     // making the server host
     serverHost = enet_host_create(
-        NULL,
+        &address,
         1, // max clients
         2, // max channels
         0, // incomding bandiwth ( 0 = uinlmited)
@@ -141,11 +144,11 @@ bool SetupClient() {
     }
 
     ENetAddress address;
-    enet_address_set_host(&address,SERVER_IP);
+    enet_address_set_host(&address, SERVER_IP);
     address.port = SERVER_PORT;
 
     serverPeer = enet_host_connect(clientHost,
-        &address,
+        &address,  
         2,
         0
     );
@@ -396,9 +399,9 @@ int main() {
             if (quitHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
                 break;
             }
+            EndDrawing();
         }
         else if (state=="SINGLE"){
-            BeginDrawing();
             HideCursor();
             ClearBackground(BLUE);
             BeginMode2D(camera);
@@ -546,7 +549,6 @@ int main() {
         
         if (connectionState == "DISCONNECTED") {
             DrawText("Starting server...", screenWidth/2 - 120, screenHeight/2, 30, WHITE);
-            EndDrawing();
             
             if (SetupHost()) {
                 connectionState = "HOSTING";
@@ -558,7 +560,6 @@ int main() {
         else if (connectionState == "HOSTING") {
             DrawText("HOSTING GAME...", screenWidth/2 - 150, screenHeight/2, 30, WHITE);
             DrawText("Waiting for player to join", screenWidth/2 - 180, screenHeight/2 + 50, 20, GRAY);
-            EndDrawing();
             
             // Check for new connections
             ENetEvent event;
@@ -584,6 +585,7 @@ int main() {
                 }
             }
         }
+        EndDrawing();
     }
     else if (state == "JOIN") {
         BeginDrawing();
@@ -591,7 +593,6 @@ int main() {
         
         if (connectionState == "DISCONNECTED") {
             DrawText("Connecting...", screenWidth/2 - 100, screenHeight/2, 30, WHITE);
-            EndDrawing();
             
             if (SetupClient()) {
                 connectionState = "JOINING";
@@ -603,7 +604,6 @@ int main() {
         else if (connectionState == "JOINING") {
             DrawText("JOINING GAME...", screenWidth/2 - 150, screenHeight/2, 30, WHITE);
             DrawText("Connecting to host...", screenWidth/2 - 140, screenHeight/2 + 50, 20, GRAY);
-            EndDrawing();
             
             // Check connection status
             ENetEvent event;
@@ -627,7 +627,9 @@ int main() {
                     state = "MULTIPLAYER";
                 }
             }
-        }else if (state=="MULTIPLAYER"){
+        }
+        EndDrawing();
+    }else if (state=="MULTIPLAYER"){
             // receive updates from other player
             ENetEvent event;
             if (clientHost != nullptr){
@@ -649,7 +651,6 @@ int main() {
                     }
                 }
             }
-                BeginDrawing();
             HideCursor();
             ClearBackground(BLUE);
             BeginMode2D(camera);
