@@ -2,6 +2,23 @@
 #include <bits/stdc++.h>
 #include <enet/enet.h>
 
+std::string connectionState = "DISCONNECTED";
+ENetHost* clientHost = nullptr;
+ENetPeer* serverPeer = nullptr; // for client connection to server
+ENetHost* serverHost = nullptr; // for host server
+ENetPeer* clientPeer = nullptr; // for host connection to client
+
+const char* SERVER_IP = "127.0.0.1";
+const int SERVER_PORT = 7777;
+
+// just testing for now
+// Packet structure for position updates
+struct PositionPacket {
+    float x;
+    float y;
+};
+
+
 struct Character {
     float health = 300.0f;
     float mana = 300.0f;
@@ -25,7 +42,7 @@ std::string state = "MENU";
 struct Ball{
     Color spellColor = RED;
     Vector2 ball_pos = {};
-    Vector2 target_pos = {};  // Renamed from mouse_pos to be clearer
+    Vector2 target_pos = {};  // Renamed from mouse_pos
     float ball_r = 25.0f;
     float ball_speed;
     float damage = 0.0f;
@@ -91,6 +108,29 @@ std::string getDirectionToMouse(Vector2 player_pos, Vector2 mouse_world){
     return "northeast";
 }
 
+bool SetupHost(){
+    // making the server host
+    serverHost = enet_host_create(
+        NULL,
+        1, // max clients
+        2, // max channels
+        0, // incomding bandiwth ( 0 = uinlmited)
+        0
+    );
+    if (serverHost == NULL){
+        printf("failed to create server host"); // i was watching a codeforces tournament and realized u can use c functions in cpp
+        return false;
+    }
+    printf("Server h osting on port %d\n" , SERVER_PORT);
+    return true;
+
+}
+
+bool SetupClient() {
+    // create a client host
+    clientHost
+}
+
 int main() {
 
     // enet initilization
@@ -131,10 +171,18 @@ int main() {
 
     std::vector<Texture2D> trees = tree_spawner();
     std::vector<Vector2> tree_pos = tree_positions();
-    std::vector<Character> all_players(2); // 1v1 for now
-    all_players[0] = player; // local player always first
+    std::vector<Character> all_players; // 1v1 for now
+    all_players.push_back(player); // local player always first
+    all_players[0].is_local = true;
+    
+    // Push another player for testing
+    Character opponent;
+    opponent.pos.x = x_distr(gen);
+    opponent.pos.y = y_distr(gen);
+    opponent.is_local = false;
+    all_players.push_back(opponent);
 
-    // safe spawn
+    // safe spawn for local player
     do {
         all_players[0].pos.x = x_distr(gen);
         all_players[0].pos.y = y_distr(gen);
@@ -174,7 +222,7 @@ int main() {
             }
         }
         
-        // Update camera target to follow player
+        // Update camera target to follow local player
         camera.target = (Vector2){ all_players[0].pos.x + 20, all_players[0].pos.y + 20 };
 
         // Handle spell casting with proper world coordinates
@@ -260,22 +308,43 @@ int main() {
             ShowCursor();
             ClearBackground(BLACK);
 
-            DrawText("WIZARD DUEL", screenWidth/2 - 180, 120, 50, WHITE);
+            DrawText("WIZARD DUEL", screenWidth/2 - 180, 80, 50, WHITE);
 
-            Rectangle singleBtn = {screenWidth/2 - 150, 260, 300, 60};
-            Rectangle quitBtn   = {screenWidth/2 - 150, 350, 300, 60};
+            // Adjust button positions to accommodate more buttons
+            Rectangle singleBtn = {screenWidth/2 - 150, 180, 300, 60};
+            Rectangle hostBtn   = {screenWidth/2 - 150, 260, 300, 60};
+            Rectangle joinBtn   = {screenWidth/2 - 150, 340, 300, 60};
+            Rectangle quitBtn   = {screenWidth/2 - 150, 420, 300, 60};
 
             Vector2 mouse = GetMousePosition();
 
             bool singleHover = CheckCollisionPointRec(mouse, singleBtn);
+            bool hostHover   = CheckCollisionPointRec(mouse, hostBtn);
+            bool joinHover   = CheckCollisionPointRec(mouse, joinBtn);
             bool quitHover   = CheckCollisionPointRec(mouse, quitBtn);
 
+            // Draw buttons
             DrawRectangleRec(singleBtn, singleHover ? MAROON : RED);
+            DrawRectangleRec(hostBtn,   hostHover   ? DARKGREEN : GREEN);
+            DrawRectangleRec(joinBtn,   joinHover   ? DARKBLUE : BLUE);
             DrawRectangleRec(quitBtn,   quitHover   ? DARKGRAY : GRAY);
 
+            // Button text
             DrawText("SINGLEPLAYER",
                     singleBtn.x + 55,
                     singleBtn.y + 18,
+                    25,
+                    WHITE);
+
+            DrawText("HOST GAME",
+                    hostBtn.x + 70,
+                    hostBtn.y + 18,
+                    25,
+                    WHITE);
+
+            DrawText("JOIN GAME",
+                    joinBtn.x + 75,
+                    joinBtn.y + 18,
                     25,
                     WHITE);
 
@@ -285,8 +354,17 @@ int main() {
                     25,
                     WHITE);
 
+            // Button interactions
             if (singleHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
                 state = "SINGLE";
+            }
+
+            if (hostHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
+                state = "HOST";
+            }
+
+            if (joinHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
+                state = "JOIN";
             }
 
             if (quitHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
@@ -304,20 +382,25 @@ int main() {
                 DrawTextureRec(trees[i], tree_rect, tree_pos[i], WHITE);
             }
             
-            // Draw player
-            DrawTextureRec(self_char, all_players[0].rect, all_players[0].pos, WHITE);
-            
-            // Draw health and mana bars
-            DrawRectangle((int)all_players[0].pos.x - 10, (int)all_players[0].pos.y - 20, 40, 5, DARKGRAY);
-            DrawRectangle((int)all_players[0].pos.x - 10, (int)all_players[0].pos.y - 20, (all_players[0].health / 300.0f) * 40, 5, RED);
-            DrawRectangle((int)all_players[0].pos.x - 10, (int)all_players[0].pos.y - 13, 40, 5, DARKGRAY);
-            DrawRectangle((int)all_players[0].pos.x - 10, (int)all_players[0].pos.y - 13, (all_players[0].mana / 300.0f) * 40, 5, PURPLE);
+            // Draw all players according to number of players in array
+            for (int i = 0; i < all_players.size(); i++) {
+                // Draw player with appropriate color/tint
+                Color playerTint = all_players[i].is_local ? WHITE : GRAY;
+                DrawTextureRec(self_char, all_players[i].rect, all_players[i].pos, playerTint);
+                
+                // Draw health and mana bars for each player
+                DrawRectangle((int)all_players[i].pos.x - 10, (int)all_players[i].pos.y - 20, 40, 5, DARKGRAY);
+                DrawRectangle((int)all_players[i].pos.x - 10, (int)all_players[i].pos.y - 20, (all_players[i].health / 300.0f) * 40, 5, RED);
+                DrawRectangle((int)all_players[i].pos.x - 10, (int)all_players[i].pos.y - 13, 40, 5, DARKGRAY);
+                DrawRectangle((int)all_players[i].pos.x - 10, (int)all_players[i].pos.y - 13, (all_players[i].mana / 300.0f) * 40, 5, PURPLE);
+            }
             
             // Draw cursor in world space
             DrawTexture(cursor_img, mouse_world.x - 10, mouse_world.y - 10, WHITE);
             
-            // Check boundaries
-            if (all_players[0].pos.x < 0 || all_players[0].pos.x > 2000 || all_players[0].pos.y < 0 || all_players[0].pos.y > 2000) {
+            // Check boundaries for local player
+            if (all_players[0].pos.x < 0 || all_players[0].pos.x > 2000 || 
+                all_players[0].pos.y < 0 || all_players[0].pos.y > 2000) {
                 all_players[0].health = 0.0f;
             }
 
@@ -350,12 +433,6 @@ int main() {
                         current_ball.ball_pos.x += direction.x * current_ball.ball_speed;
                         current_ball.ball_pos.y += direction.y * current_ball.ball_speed;
                     }
-                    
-                    // Remove ball if it reached target or disappeared
-                    // if (length <= 5.0f || current_ball.ball_r <= 0.0f) {
-                    //     ball_vec.erase(ball_vec.begin() + i);
-                    //     i--;
-                    // }
                 }
             }
             
@@ -363,23 +440,26 @@ int main() {
                 all_players[0].is_cast = false;
             }
 
-            // Death animation
-            if (all_players[0].isDead && all_players[0].deathTime < 1.0f){
-                all_players[0].deathTime += GetFrameTime() * 0.5f;
-                if (all_players[0].deathTime > 1.0f) all_players[0].deathTime = 1.0f;
-            }
+            // Death animation for all players
+            for (int i = 0; i < all_players.size(); i++) {
+                if (all_players[i].isDead && all_players[i].deathTime < 1.0f){
+                    all_players[i].deathTime += GetFrameTime() * 0.5f;
+                    if (all_players[i].deathTime > 1.0f) all_players[i].deathTime = 1.0f;
+                }
 
-            if (all_players[0].health <= 0.0f){
-                all_players[0].isDead = true;
+                if (all_players[i].health <= 0.0f){
+                    all_players[i].isDead = true;
+                }
             }
 
             EndMode2D();
             
-            // UI text (screen space)
+            // UI text (screen space) - using local player for reference
             float distance = sqrt(pow(mouse_world.y - all_players[0].pos.y, 2) + 
                                  pow(mouse_world.x - all_players[0].pos.x, 2));
             std::string dist_bw = "Target Distance: " + std::to_string((int)distance) + 
-                                 "  Direction: " + getDirectionToMouse(all_players[0].pos, mouse_world);
+                                 "  Direction: " + getDirectionToMouse(all_players[0].pos, mouse_world) +
+                                 "  Players: " + std::to_string(all_players.size());
             DrawText(dist_bw.c_str(), 30, 520, 20, BLACK);
         
             if (all_players[0].draining_mana){
@@ -394,7 +474,7 @@ int main() {
                 }
             }
 
-            // Death screen
+            // Death screen (only for local player)
             if (all_players[0].isDead){
                 DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, all_players[0].deathTime));
                 if (all_players[0].deathTime >= 0.6f){
@@ -402,7 +482,7 @@ int main() {
                 }
             }
 
-            // Death sound and reset
+            // Death sound and reset (only for local player)
             if (all_players[0].isDead && !all_players[0].deathSoundPlayed){
                 PlaySound(deathSound);
                 all_players[0].deathSoundPlayed = true;
@@ -410,23 +490,47 @@ int main() {
 
             if (all_players[0].isDead && all_players[0].deathTime >= 1.0f) {
                 state = "MENU";
-                // reset player
+                // reset local player
                 all_players[0].health = 300.0f;
                 all_players[0].mana = 300.0f;
                 all_players[0].isDead = false;
                 all_players[0].deathSoundPlayed = false;
                 all_players[0].deathTime = 0.0f;
                 ball_vec.clear();
+                
+                // Reset opponent for testing
+                if (all_players.size() > 1) {
+                    all_players[1].health = 300.0f;
+                    all_players[1].mana = 300.0f;
+                    all_players[1].isDead = false;
+                    all_players[1].deathSoundPlayed = false;
+                    all_players[1].deathTime = 0.0f;
+                }
             }
 
             // Debug key
             if (IsKeyDown(KEY_I)){
                 all_players[0].health = all_players[0].health - 50.0f;
             }
-        }
         EndDrawing();
-    }
+    } else if (state == "HOST") {
+            // display connecting
+            BeginDrawing();
+            ClearBackground(BLACK);
+            DrawText("HOSTING GAME...",screenWidth/2-150,screenHeight/2,30,WHITE);
+            DrawText("waiting for other player to join",screenWidth/2-100,screenHeight/2+50,20,GRAY);
+            EndDrawing();
+    }else if (state == "JOIN") {
+    // Display connecting screen
+        BeginDrawing();
+        ClearBackground(BLACK);
+        DrawText("JOINING GAME...", screenWidth/2 - 150, screenHeight/2, 30, WHITE);
+        DrawText("Connecting to host...", screenWidth/2 - 140, screenHeight/2 + 50, 20, GRAY);
+        EndDrawing();
 
+    }
+    
+    }
     // Cleanup
     for (auto& t : trees) {
         UnloadTexture(t);
