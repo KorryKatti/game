@@ -767,19 +767,90 @@ int main() {
             if (clientHost != nullptr){
                 while (enet_host_service(clientHost,&event,0)>0){
                     if (event.type == ENET_EVENT_TYPE_RECEIVE){
-                        PositionPacket* posPacket = (PositionPacket*)event.packet->data;
-                        all_players[1].pos.x = posPacket->x;
-                        all_players[1].pos.y = posPacket->y;
-                        enet_packet_destroy(event.packet);
-                    }
-                }
-            }else if (serverHost != nullptr){
-                while (enet_host_service(serverHost,&event,0)>0){
-                    if (event.type == ENET_EVENT_TYPE_RECEIVE){
-                        PositionPacket* posPacket = (PositionPacket*)event.packet->data;
-                        all_players[1].pos.x = posPacket->x;
-                        all_players[1].pos.y = posPacket->y;
-                        enet_packet_destroy(event.packet);
+                        NetworkPacket* header = (NetworkPacket*)event.packet->data;
+
+                        switch (header->type){
+                            case MSG_POSITION_UPDATE: {
+                                PositionPacket* posPacket = (PositionPacket*)event.packet->data;
+
+                                for (auto& p:all_players){
+                                    if (p.id == header->playerId){
+                                        p.pos.x = posPacket->x;
+                                        p.pos.y = posPacket->y;
+                                        break;
+                                    }
+                                }break;
+                            }
+                            case MSG_SPELL_CAST: {
+                                SpellCastPacket* spellPacket = (SpellCastPacket*)event.packet->data;
+
+                                // locally spawning so dont respawn our own spell ( balls )
+                                if (spellPacket->playerId == all_players[0].id){
+                                    break;
+                                }
+
+                                Ball new_ball;
+                                new_ball.spell_id = spellPacket->spell_id;
+                                new_ball.owner_id = spellPacket->playerId;
+                                // i am tired boss
+                                new_ball.target_pos = {spellPacket->pos_x,spellPacket->pos_y};
+                                new_ball.ball_pos = {spellPacket->pos_x,spellPacket->pos_y};
+
+                                if (spellPacket->spell_type == 1){
+                                    new_ball.spellColor = bloodRed;
+                                    new_ball.ball_speed = 2.0f;
+                                    new_ball.damage = 35.0f;
+                                }else {
+                                    new_ball.spellColor = DARKBLUE;
+                                    new_ball.ball_speed = 4.0f;
+                                    new_ball.damage = 25.0f;
+                                }
+
+                                new_ball.ball_r = 25.0f;
+                                new_ball.has_hit = false;
+
+                                ball_vec.push_back(new_ball);
+                                active_spells[new_ball.spell_id] = new_ball;
+                                break;
+                            }
+                            case MSG_HIT_CONFIRM: {
+                                HitPacket* hitPacket = (HitPacket*)event.packet->data;
+
+                                for (auto& p: all_players){
+                                    if (p.id == hitPacket->target_player){
+                                        p.health -= hitPacket->damage;
+                                        break;
+                                    }
+                                }
+                                auto it = active_spells.find(hitPacket->spell_id);
+                                if (it != active_spells.end()){
+                                    it->second.has_hit=true;
+                                }
+                                break;
+                            }
+                            
+                            case MSG_HEALTH_UPDATE: {
+                                HealthPacket* healthPacket = (HealthPacket*)event.packet->data;
+                                for (auto& p: all_players){
+                                    if (p.id == header->playerId){
+                                        p.health= healthPacket->health;
+                                        p.mana = healthPacket->mana;
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            
+                            case MSG_PLAYER_DEATH: {
+                                for (auto& p: all_players){
+                                    if (p.id == header->playerId){
+                                        p.health = 0;
+                                        p.isDead = true;
+                                        break;
+                                    }
+                                }break;
+                            }
+                        }enet_packet_destroy(event.packet);
                     }
                 }
             }
