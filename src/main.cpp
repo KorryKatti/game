@@ -7,15 +7,52 @@ ENetHost* clientHost = nullptr;
 ENetPeer* serverPeer = nullptr; // for client connection to server
 ENetHost* serverHost = nullptr; // for host server
 ENetPeer* clientPeer = nullptr; // for host connection to client
+uint32_t next_spell_id = 1;  // For generating unique spell IDs
 
 const char* SERVER_IP = "127.0.0.1";
 const int SERVER_PORT = 7777;
 
 // just testing for now
 // Packet structure for position updates
-struct PositionPacket {
+// ok a bit of AI assistance was used this , i couldn;t realy figure out enet
+enum MessageType {
+    MSG_POSITION_UPDATE = 0,
+    MSG_SPELL_CAST = 1,
+    MSG_HIT_CONFIRM = 2,
+    MSG_HEALTH_UPDATE = 3,
+    MSG_PLAYER_DEATH = 4
+};
+// struct for all the messages
+struct NetworkPacket{
+    uint8_t type;
+    uint8_t playerId;
+};
+
+struct PositionPacket : NetworkPacket {
     float x;
     float y;
+};
+
+// spell casting packet
+struct SpellCastPacket : NetworkPacket {
+    float target_x;
+    float target_y;
+    uint8_t spell_type;
+    float pos_x;
+    float pos_y;
+    uint32_t spell_id;
+};
+
+// hit confirm packet
+struct HitPacket:NetworkPacket{
+    float damage;
+    uint32_t spell_id;
+    uint8_t target_player;
+};
+
+struct HealthPacket : NetworkPacket {
+    float health;
+    float mana;
 };
 
 
@@ -31,6 +68,7 @@ struct Character {
     bool is_local = false; // to check if its a local character or opponent
     Vector2 pos = {};
     Rectangle rect = { 0, 0, 20, 40 };
+    uint8_t id = 0; // network id
 };
 
 Color bloodRed = { 128, 0, 0, 255 };
@@ -46,7 +84,13 @@ struct Ball{
     float ball_r = 25.0f;
     float ball_speed;
     float damage = 0.0f;
+    uint32_t spell_id = 0;
+    uint8_t owner_id = 0;
+    bool has_hit = false;
 };
+
+std::unordered_map<uint32_t, Ball> active_spells;  // Track spells by ID
+
 
 bool checkCollision(Vector2 player_pos, std::vector<Vector2>& trees_pos){
     Rectangle player_rect = {player_pos.x, player_pos.y, 20, 40};
@@ -254,36 +298,124 @@ int main() {
         // Update camera target to follow local player
         camera.target = (Vector2){ all_players[0].pos.x + 20, all_players[0].pos.y + 20 };
 
-        // Handle spell casting with proper world coordinates
+        // // Handle spell casting with proper world coordinates
+        // if (IsKeyDown(KEY_ONE)){
+        //     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
+        //         if (all_players[0].mana >= 25.0f){
+        //             Ball red_ball;
+        //             all_players[0].is_cast = true;
+        //             red_ball.target_pos = mouse_world;  // Use world coordinates
+        //             all_players[0].mana = all_players[0].mana - 5.0f;
+        //             red_ball.spellColor = bloodRed;
+        //             red_ball.ball_speed = 2.0f;
+        //             red_ball.ball_pos = all_players[0].pos;
+        //             red_ball.ball_r = 35.0f;
+        //             red_ball.damage = 1.0f * red_ball.ball_r;
+        //             ball_vec.push_back(red_ball);
+        //             balls_size = ball_vec.size();
+        //         }
+        //     }
+        // } else if (IsKeyDown(KEY_TWO)){
+        //     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
+        //         if (all_players[0].mana >= 35.0f){
+        //             Ball blue_ball;
+        //             all_players[0].is_cast = true;
+        //             blue_ball.target_pos = mouse_world;  // Use world coordinates
+        //             all_players[0].mana = all_players[0].mana - 5.0f;
+        //             blue_ball.spellColor = DARKBLUE;
+        //             blue_ball.ball_pos = all_players[0].pos;
+        //             blue_ball.ball_speed = 4.0f;
+        //             blue_ball.damage = 1.0f * blue_ball.ball_r;
+        //             ball_vec.push_back(blue_ball);
+        //             balls_size = ball_vec.size();
+        //         }
+        //     }
+        // }
         if (IsKeyDown(KEY_ONE)){
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
                 if (all_players[0].mana >= 25.0f){
-                    Ball red_ball;
+                    Ball new_ball;
+                    new_ball.spell_id = next_spell_id++;
+                    new_ball.owner_id = all_players[0].id;
+                    new_ball.target_pos = mouse_world;
+                    new_ball.ball_pos = all_players[0].pos;
+                    new_ball.spellColor = bloodRed;
+                    new_ball.ball_speed = 2.0f;
+                    new_ball.ball_r = 35.0f;
+                    new_ball.damage = 35.0f;
+                    new_ball.has_hit = false;
+                    ball_vec.push_back(new_ball);
+                    active_spells[new_ball.spell_id] = new_ball;
+                    all_players[0].mana -= 5.0f;
                     all_players[0].is_cast = true;
-                    red_ball.target_pos = mouse_world;  // Use world coordinates
-                    all_players[0].mana = all_players[0].mana - 5.0f;
-                    red_ball.spellColor = bloodRed;
-                    red_ball.ball_speed = 2.0f;
-                    red_ball.ball_pos = all_players[0].pos;
-                    red_ball.ball_r = 35.0f;
-                    red_ball.damage = 1.0f * red_ball.ball_r;
-                    ball_vec.push_back(red_ball);
-                    balls_size = ball_vec.size();
+
+                    if (state == "MULTIPLAYER"){
+                        SpellCastPacket spellPacket;
+                        spellPacket.type = MSG_SPELL_CAST;
+                        spellPacket.playerId = all_players[0].id;
+                        spellPacket.target_x = mouse_world.x;
+                        spellPacket.target_y = mouse_world.y;
+                        spellPacket.spell_type = 1; // the red one
+                        spellPacket.pos_x = all_players[0].pos.x;
+                        spellPacket.pos_y = all_players[0].pos.y;
+                        spellPacket.spell_id = new_ball.spell_id;
+
+                        ENetPacket* packet = enet_packet_create(
+                            &spellPacket,
+                            sizeof(SpellCastPacket),
+                            ENET_PACKET_FLAG_RELIABLE
+                        );
+                        if (clientHost!=nullptr && serverPeer != nullptr){
+                            enet_peer_send(serverPeer,0,packet);
+                        }else if (serverHost != nullptr && clientPeer != nullptr){
+                            enet_peer_send(clientPeer,0,packet);
+                        } 
+                    }
                 }
             }
         } else if (IsKeyDown(KEY_TWO)){
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
                 if (all_players[0].mana >= 35.0f){
-                    Ball blue_ball;
+                    Ball new_ball;
+                    new_ball.spell_id = next_spell_id++;
+                    new_ball.owner_id = all_players[0].id;
+                    new_ball.target_pos = mouse_world;
+                    new_ball.ball_pos = all_players[0].pos;
+                    new_ball.spellColor = DARKBLUE;
+                    new_ball.ball_speed = 4.0f;
+                    new_ball.ball_r = 25.0f;
+                    new_ball.damage = 25.0f;
+                    new_ball.has_hit = false;
+                    
+                    ball_vec.push_back(new_ball);
+                    active_spells[new_ball.spell_id] = new_ball;
+                    
+                    all_players[0].mana -= 5.0f;
                     all_players[0].is_cast = true;
-                    blue_ball.target_pos = mouse_world;  // Use world coordinates
-                    all_players[0].mana = all_players[0].mana - 5.0f;
-                    blue_ball.spellColor = DARKBLUE;
-                    blue_ball.ball_pos = all_players[0].pos;
-                    blue_ball.ball_speed = 4.0f;
-                    blue_ball.damage = 1.0f * blue_ball.ball_r;
-                    ball_vec.push_back(blue_ball);
-                    balls_size = ball_vec.size();
+                    
+                    if (state == "MULTIPLAYER") {
+                        SpellCastPacket spellPacket;
+                        spellPacket.type = MSG_SPELL_CAST;
+                        spellPacket.playerId = all_players[0].id;
+                        spellPacket.target_x = mouse_world.x;
+                        spellPacket.target_y = mouse_world.y;
+                        spellPacket.spell_type = 2;  // blue
+                        spellPacket.pos_x = all_players[0].pos.x;
+                        spellPacket.pos_y = all_players[0].pos.y;
+                        spellPacket.spell_id = new_ball.spell_id;
+                        
+                        ENetPacket* packet = enet_packet_create(
+                            &spellPacket,
+                            sizeof(SpellCastPacket),
+                            ENET_PACKET_FLAG_RELIABLE
+                        );
+                        
+                        if (clientHost != nullptr && serverPeer != nullptr) {
+                            enet_peer_send(serverPeer, 0, packet);
+                        } else if (serverHost != nullptr && clientPeer != nullptr) {
+                            enet_peer_send(clientPeer, 0, packet);
+                        }
+                    }
                 }
             }
         }
