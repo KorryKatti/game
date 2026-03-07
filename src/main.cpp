@@ -646,7 +646,12 @@ int main() {
                  GOLD);
       }
 
-      if (all_players[0].isDead && all_players[0].deathTime >= 1.0f) {
+      bool shouldReset =
+          (all_players[0].isDead && all_players[0].deathTime >= 1.0f) ||
+          (all_players.size() > 1 && all_players[1].isDead &&
+           all_players[1].deathTime >= 1.0f);
+
+      if (shouldReset) {
         state = "MENU";
         // reset local player
         all_players[0].health = 300.0f;
@@ -813,8 +818,9 @@ int main() {
     } else if (state == "MULTIPLAYER") {
       // receive updates from other player
       ENetEvent event;
-      if (clientHost != nullptr) {
-        while (enet_host_service(clientHost, &event, 0) > 0) {
+      ENetHost *activeHost = clientHost != nullptr ? clientHost : serverHost;
+      if (activeHost != nullptr) {
+        while (enet_host_service(activeHost, &event, 0) > 0) {
           if (event.type == ENET_EVENT_TYPE_RECEIVE) {
             NetworkPacket *header = (NetworkPacket *)event.packet->data;
 
@@ -1131,7 +1137,12 @@ int main() {
                               : (serverPeer ? serverPeer->roundTripTime : 0)),
                30, 600, 20, BLACK);
 
-      if (all_players[0].isDead && all_players[0].deathTime >= 1.0f) {
+      bool shouldReset =
+          (all_players[0].isDead && all_players[0].deathTime >= 1.0f) ||
+          (all_players.size() > 1 && all_players[1].isDead &&
+           all_players[1].deathTime >= 1.0f);
+
+      if (shouldReset) {
         state = "MENU";
         // reset local player
         all_players[0].health = 300.0f;
@@ -1149,6 +1160,19 @@ int main() {
           all_players[1].deathSoundPlayed = false;
           all_players[1].deathTime = 0.0f;
         }
+
+        // Clean up connections for next match
+        if (serverHost != nullptr) {
+          enet_host_destroy(serverHost);
+          serverHost = nullptr;
+        }
+        if (clientHost != nullptr) {
+          enet_host_destroy(clientHost);
+          clientHost = nullptr;
+        }
+        serverPeer = nullptr;
+        clientPeer = nullptr;
+        connectionState = "DISCONNECTED";
       }
 
       // Debug key
@@ -1175,6 +1199,8 @@ int main() {
       if (all_players[0].pos.x != old_pos.x ||
           all_players[0].pos.y != old_pos.y) {
         PositionPacket posPacket;
+        posPacket.type = MSG_POSITION_UPDATE;
+        posPacket.playerId = all_players[0].id;
         posPacket.x = all_players[0].pos.x;
         posPacket.y = all_players[0].pos.y;
 
