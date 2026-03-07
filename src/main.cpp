@@ -3,6 +3,7 @@
 #include <enet/enet.h>
 
 std::string connectionState = "DISCONNECTED";
+static int trees_received = 0;
 ENetHost *clientHost = nullptr;
 ENetPeer *serverPeer = nullptr; // for client connection to server
 ENetHost *serverHost = nullptr; // for host server
@@ -20,12 +21,19 @@ enum MessageType {
   MSG_SPELL_CAST = 1,
   MSG_HIT_CONFIRM = 2,
   MSG_HEALTH_UPDATE = 3,
-  MSG_PLAYER_DEATH = 4
+  MSG_PLAYER_DEATH = 4,
+  MSG_TREE_POSITIONS = 5
 };
 // struct for all the messages
 struct NetworkPacket {
   uint8_t type;
   uint8_t playerId;
+};
+
+struct TreePacket : NetworkPacket {
+  float x;
+  float y;
+  uint16_t index;
 };
 
 struct PositionPacket : NetworkPacket {
@@ -511,7 +519,7 @@ int main() {
       BeginMode2D(camera);
 
       // Draw world
-      DrawTexture(island_img, 0, 0, WHITE);
+      DrawTexture(island_img, 0, 0, LIGHTGRAY);
       for (int i = 0; i < number_of_trees; i++) {
         DrawTextureRec(trees[i], tree_rect, tree_pos[i], WHITE);
       }
@@ -629,6 +637,15 @@ int main() {
         all_players[0].deathSoundPlayed = true;
       }
 
+      // Check if opponent died
+      if (all_players.size() > 1 && all_players[1].isDead &&
+          !all_players[1].deathSoundPlayed) {
+        // Opponent died, show victory
+        DrawRectangle(0, 0, screenWidth, screenHeight, Fade(GREEN, 0.3f));
+        DrawText("VICTORY!", screenWidth / 2 - 120, screenHeight / 2 - 50, 50,
+                 GOLD);
+      }
+
       if (all_players[0].isDead && all_players[0].deathTime >= 1.0f) {
         state = "MENU";
         // reset local player
@@ -682,17 +699,49 @@ int main() {
             clientPeer = event.peer;
             connectionState = "CONNECTED";
 
+            // Keep our position
+            Vector2 current_pos = all_players[0].pos;
+
             // Start the game
             all_players.clear();
+            player.id = 0;
+            player.pos = current_pos;
             all_players.push_back(player);
             all_players[0].is_local = true;
 
             // Add opponent (will be updated by network)
             Character opponent;
-            opponent.pos.x = x_distr(gen);
-            opponent.pos.y = y_distr(gen);
+            opponent.id = 1;
+            opponent.pos.x = 0;
+            opponent.pos.y = 0;
             opponent.is_local = false;
             all_players.push_back(opponent);
+
+            // sending tree positions so both clients have same map
+            for (size_t i = 0; i < tree_pos.size(); i++) {
+              struct TreePacket {
+                float x;
+                float y;
+              };
+
+              TreePacket treePkt = {tree_pos[i].x, tree_pos[i].y};
+              ENetPacket *packet = enet_packet_create(
+                  &treePkt, sizeof(TreePacket), ENET_PACKET_FLAG_RELIABLE);
+
+              enet_peer_send(clientPeer, 0, packet);
+            }
+
+            // sending intitial position of host
+            PositionPacket posPacket;
+            posPacket.type = MSG_POSITION_UPDATE;
+            posPacket.playerId = 0;
+            posPacket.x = all_players[0].pos.x;
+            posPacket.y = all_players[0].pos.y;
+
+            ENetPacket *posPkt = enet_packet_create(
+                &posPacket, sizeof(PositionPacket), ENET_PACKET_FLAG_RELIABLE);
+
+            enet_peer_send(clientPeer, 0, posPkt);
 
             state = "MULTIPLAYER";
           }
@@ -726,17 +775,35 @@ int main() {
             printf("Connected to server!\n");
             connectionState = "CONNECTED";
 
+            // Keep our position
+            Vector2 current_pos = all_players[0].pos;
+
             // Start the game
             all_players.clear();
+            player.id = 1; // client is [player 1]
+            player.pos = current_pos;
             all_players.push_back(player);
             all_players[0].is_local = true;
 
-            // Add opponent (will be updated by network)
+            // Add opponent (the host)
             Character opponent;
-            opponent.pos.x = x_distr(gen);
-            opponent.pos.y = y_distr(gen);
+            opponent.id = 0;
+            opponent.pos.x = 0;
+            opponent.pos.y = 0;
             opponent.is_local = false;
             all_players.push_back(opponent);
+
+            // Send our position to host
+            PositionPacket posPacket;
+            posPacket.type = MSG_POSITION_UPDATE;
+            posPacket.playerId = 1;
+            posPacket.x = all_players[0].pos.x;
+            posPacket.y = all_players[0].pos.y;
+
+            ENetPacket *posPkt = enet_packet_create(
+                &posPacket, sizeof(PositionPacket), ENET_PACKET_FLAG_RELIABLE);
+
+            enet_peer_send(serverPeer, 0, posPkt);
 
             state = "MULTIPLAYER";
           }
@@ -777,20 +844,23 @@ int main() {
               new_ball.spell_id = spellPacket->spell_id;
               new_ball.owner_id = spellPacket->playerId;
               // i am tired boss
-              new_ball.target_pos = {spellPacket->pos_x, spellPacket->pos_y};
+              new_ball.target_pos = {spellPacket->target_x,
+                                     spellPacket->target_y};
               new_ball.ball_pos = {spellPacket->pos_x, spellPacket->pos_y};
 
               if (spellPacket->spell_type == 1) {
                 new_ball.spellColor = bloodRed;
                 new_ball.ball_speed = 2.0f;
                 new_ball.damage = 35.0f;
+                new_ball.ball_r = 35.0f;
               } else {
                 new_ball.spellColor = DARKBLUE;
                 new_ball.ball_speed = 4.0f;
                 new_ball.damage = 25.0f;
+                new_ball.ball_r = 25.0f;
               }
 
-              new_ball.ball_r = 25.0f;
+              // new_ball.ball_r = 25.0f;
               new_ball.has_hit = false;
 
               ball_vec.push_back(new_ball);
@@ -835,6 +905,17 @@ int main() {
               }
               break;
             }
+            case MSG_TREE_POSITIONS: {
+              TreePacket *treePkt = (TreePacket *)event.packet->data;
+              tree_pos[treePkt->index] = {treePkt->x, treePkt->y};
+              trees_received++;
+
+              // idk what to do here but if all trees go we should start ig
+              if (trees_received >= number_of_trees) {
+                // idk what to put here
+              }
+              break;
+            }
             }
             enet_packet_destroy(event.packet);
           }
@@ -868,6 +949,12 @@ int main() {
         DrawRectangle((int)all_players[i].pos.x - 10,
                       (int)all_players[i].pos.y - 13,
                       (all_players[i].mana / 300.0f) * 40, 5, PURPLE);
+      }
+
+      // player IDs for debugging
+      for (int i = 0; i < all_players.size(); i++) {
+        DrawText(TextFormat("P%d", all_players[i].id), all_players[i].pos.x,
+                 all_players[i].pos.y - 30, 15, YELLOW);
       }
 
       // Draw cursor in world space
@@ -1027,6 +1114,15 @@ int main() {
       if (all_players[0].isDead && !all_players[0].deathSoundPlayed) {
         PlaySound(deathSound);
         all_players[0].deathSoundPlayed = true;
+      }
+
+      // Check if opponent died
+      if (all_players.size() > 1 && all_players[1].isDead &&
+          !all_players[1].deathSoundPlayed) {
+        // Opponent died, show victory
+        DrawRectangle(0, 0, screenWidth, screenHeight, Fade(GREEN, 0.3f));
+        DrawText("VICTORY!", screenWidth / 2 - 120, screenHeight / 2 - 50, 50,
+                 GOLD);
       }
 
       DrawText(TextFormat("Ping: %d ms",
