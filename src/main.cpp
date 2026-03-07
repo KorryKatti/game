@@ -554,7 +554,7 @@ int main() {
       }
 
       // Update and draw balls
-      if (all_players[0].is_cast && !ball_vec.empty()) {
+      if (!ball_vec.empty()) {
         for (int i = 0; i < ball_vec.size(); i++) {
           Ball &current_ball = ball_vec[i];
 
@@ -724,12 +724,13 @@ int main() {
 
             // sending tree positions so both clients have same map
             for (size_t i = 0; i < tree_pos.size(); i++) {
-              struct TreePacket {
-                float x;
-                float y;
-              };
+              TreePacket treePkt;
+              treePkt.type = MSG_TREE_POSITIONS;
+              treePkt.playerId = 0;
+              treePkt.x = tree_pos[i].x;
+              treePkt.y = tree_pos[i].y;
+              treePkt.index = i;
 
-              TreePacket treePkt = {tree_pos[i].x, tree_pos[i].y};
               ENetPacket *packet = enet_packet_create(
                   &treePkt, sizeof(TreePacket), ENET_PACKET_FLAG_RELIABLE);
 
@@ -743,8 +744,8 @@ int main() {
             posPacket.x = all_players[0].pos.x;
             posPacket.y = all_players[0].pos.y;
 
-            ENetPacket *posPkt = enet_packet_create(
-                &posPacket, sizeof(PositionPacket), ENET_PACKET_FLAG_RELIABLE);
+            ENetPacket *posPkt =
+                enet_packet_create(&posPacket, sizeof(PositionPacket), 0);
 
             enet_peer_send(clientPeer, 0, posPkt);
 
@@ -805,8 +806,8 @@ int main() {
             posPacket.x = all_players[0].pos.x;
             posPacket.y = all_players[0].pos.y;
 
-            ENetPacket *posPkt = enet_packet_create(
-                &posPacket, sizeof(PositionPacket), ENET_PACKET_FLAG_RELIABLE);
+            ENetPacket *posPkt =
+                enet_packet_create(&posPacket, sizeof(PositionPacket), 0);
 
             enet_peer_send(serverPeer, 0, posPkt);
 
@@ -844,6 +845,13 @@ int main() {
               // locally spawning so dont respawn our own spell ( balls )
               if (spellPacket->playerId == all_players[0].id) {
                 break;
+              }
+
+              for (auto &p : all_players) {
+                if (p.id == spellPacket->playerId) {
+                  p.is_cast = true;
+                  break;
+                }
               }
 
               Ball new_ball;
@@ -973,7 +981,7 @@ int main() {
       }
 
       // Update and draw balls
-      if (all_players[0].is_cast && !ball_vec.empty()) {
+      if (!ball_vec.empty()) {
         for (int i = 0; i < ball_vec.size(); i++) {
           Ball &current_ball = ball_vec[i];
 
@@ -1181,21 +1189,6 @@ int main() {
       }
       EndDrawing();
 
-      Vector2 old_pos = all_players[0].pos;
-      if (all_players[0].is_local) {
-        if (IsKeyDown(KEY_D))
-          all_players[0].pos.x += 0.5f;
-        else if (IsKeyDown(KEY_A))
-          all_players[0].pos.x -= 0.5f;
-        else if (IsKeyDown(KEY_S))
-          all_players[0].pos.y += 0.5f;
-        else if (IsKeyDown(KEY_W))
-          all_players[0].pos.y -= 0.5f;
-        if (checkCollision(all_players[0].pos, tree_pos)) {
-          all_players[0].pos = old_pos;
-        }
-      }
-
       if (all_players[0].pos.x != old_pos.x ||
           all_players[0].pos.y != old_pos.y) {
         PositionPacket posPacket;
@@ -1204,8 +1197,8 @@ int main() {
         posPacket.x = all_players[0].pos.x;
         posPacket.y = all_players[0].pos.y;
 
-        ENetPacket *packet = enet_packet_create(
-            &posPacket, sizeof(PositionPacket), ENET_PACKET_FLAG_RELIABLE);
+        ENetPacket *packet =
+            enet_packet_create(&posPacket, sizeof(PositionPacket), 0);
 
         if (clientHost != nullptr && serverPeer != nullptr) {
           enet_peer_send(serverPeer, 0, packet);
