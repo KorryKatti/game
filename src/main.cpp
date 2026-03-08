@@ -1,5 +1,7 @@
 #include "raylib.h"
 #include <bits/stdc++.h>
+#define CPPHTTPLIB_OPENSSL_SUPPORT
+#include "httplib.h"
 #include <enet/enet.h>
 
 std::string connectionState = "DISCONNECTED";

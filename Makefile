@@ -1,6 +1,6 @@
 CC = g++
-CFLAGS = -Wall -Wextra -std=c++17
-LIBS = -lraylib -lenet -lGL -lm -lpthread -ldl -lrt -lX11
+CFLAGS = -Wall -Wextra -std=c++17 -Isrc
+LIBS = -lraylib -lenet -lGL -lm -lpthread -ldl -lrt -lX11 -pthread -lssl -lcrypto
 
 SRC = src/main.cpp
 OUT = build/game
