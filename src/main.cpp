@@ -3,6 +3,7 @@
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "httplib.h"
 #include <enet/enet.h>
+#include "island_generator.h"
 
 std::string connectionState = "DISCONNECTED";
 static int trees_received = 0;
@@ -223,8 +224,9 @@ int main() {
 
   InitWindow(screenWidth, screenHeight, "WIZARD DUEL");
   InitAudioDevice();
-  Image island = LoadImage("assets/island.png");
-  Texture2D island_img = LoadTextureFromImage(island);
+  printf("Generating procedural island...\n");
+  Texture2D island_img = generate_island(69);
+  printf("Island generated!\n");
   Image cursor = LoadImage("assets/cursor.png");
   Texture2D cursor_img = LoadTextureFromImage(cursor);
   Image player_self = LoadImage("assets/self_char.png");
@@ -233,7 +235,7 @@ int main() {
   std::vector<Ball> ball_vec;
   int balls_size = 0;
 
-  UnloadImage(island);
+  // UnloadImage(island);
   UnloadImage(cursor);
   UnloadImage(player_self);
 
