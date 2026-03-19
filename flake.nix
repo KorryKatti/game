@@ -1,5 +1,5 @@
 {
-  description: "Wizard Duel";
+  description= "Wizard Duel";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
