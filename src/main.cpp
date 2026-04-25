@@ -4,6 +4,8 @@
 #include "httplib.h"
 #include <enet/enet.h>
 #include "island_generator.h"
+#include "MatchRecorder.h"
+#include "MatchUploader.h"
 
 std::string connectionState = "DISCONNECTED";
 static int trees_received = 0;
@@ -12,6 +14,11 @@ ENetPeer *serverPeer = nullptr; // for client connection to server
 ENetHost *serverHost = nullptr; // for host server
 ENetPeer *clientPeer = nullptr; // for host connection to client
 uint32_t next_spell_id = 1;     // For generating unique spell IDs
+MatchRecorder g_recorder;
+MatchUploader g_uploader("http://your-server-ip:3000"); // Change IP later
+std::string g_player1_name = "Wizard";
+std::string g_player2_name = "Opponent";
+
 
 const char *SERVER_IP = "127.0.0.1";
 const int SERVER_PORT = 7777;
