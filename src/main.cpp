@@ -306,39 +306,6 @@ int main() {
     camera.target =
         (Vector2){all_players[0].pos.x + 20, all_players[0].pos.y + 20};
 
-    // // Handle spell casting with proper world coordinates
-    // if (IsKeyDown(KEY_ONE)){
-    //     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
-    //         if (all_players[0].mana >= 25.0f){
-    //             Ball red_ball;
-    //             all_players[0].is_cast = true;
-    //             red_ball.target_pos = mouse_world;  // Use world coordinates
-    //             all_players[0].mana = all_players[0].mana - 5.0f;
-    //             red_ball.spellColor = bloodRed;
-    //             red_ball.ball_speed = 2.0f;
-    //             red_ball.ball_pos = all_players[0].pos;
-    //             red_ball.ball_r = 35.0f;
-    //             red_ball.damage = 1.0f * red_ball.ball_r;
-    //             ball_vec.push_back(red_ball);
-    //             balls_size = ball_vec.size();
-    //         }
-    //     }
-    // } else if (IsKeyDown(KEY_TWO)){
-    //     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
-    //         if (all_players[0].mana >= 35.0f){
-    //             Ball blue_ball;
-    //             all_players[0].is_cast = true;
-    //             blue_ball.target_pos = mouse_world;  // Use world coordinates
-    //             all_players[0].mana = all_players[0].mana - 5.0f;
-    //             blue_ball.spellColor = DARKBLUE;
-    //             blue_ball.ball_pos = all_players[0].pos;
-    //             blue_ball.ball_speed = 4.0f;
-    //             blue_ball.damage = 1.0f * blue_ball.ball_r;
-    //             ball_vec.push_back(blue_ball);
-    //             balls_size = ball_vec.size();
-    //         }
-    //     }
-    // }
     if (IsKeyDown(KEY_ONE)) {
       if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
         if (all_players[0].mana >= 25.0f) {
