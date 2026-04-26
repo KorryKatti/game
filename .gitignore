@@ -8,6 +8,7 @@
 *.o
 *.obj
 build/
+.venv/
 
 # Precompiled Headers
 *.gch

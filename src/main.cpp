@@ -1,11 +1,11 @@
 #include "raylib.h"
 #include <bits/stdc++.h>
 #define CPPHTTPLIB_OPENSSL_SUPPORT
-#include "httplib.h"
-#include <enet/enet.h>
-#include "island_generator.h"
 #include "MatchRecorder.h"
 #include "MatchUploader.h"
+#include "httplib.h"
+#include "island_generator.h"
+#include <enet/enet.h>
 
 std::string connectionState = "DISCONNECTED";
 static int trees_received = 0;
@@ -15,13 +15,17 @@ ENetHost *serverHost = nullptr; // for host server
 ENetPeer *clientPeer = nullptr; // for host connection to client
 uint32_t next_spell_id = 1;     // For generating unique spell IDs
 MatchRecorder g_recorder;
-MatchUploader g_uploader("http://your-server-ip:3000"); // Change IP later
+MatchUploader
+    g_uploader("http://127.0.0.1:3000"); // Change IP later // game main server
 std::string g_player1_name = "Wizard";
 std::string g_player2_name = "Opponent";
 
-
-const char *SERVER_IP = "127.0.0.1";
+const char *SERVER_IP =
+    "127.0.0.1"; // game p2p server different from main server
 const int SERVER_PORT = 7777;
+double g_match_start_time = 0.0;
+
+float getMatchDuration() { return (float)(GetTime() - g_match_start_time); }
 
 // just testing for now
 // Packet structure for position updates
@@ -32,7 +36,8 @@ enum MessageType {
   MSG_HIT_CONFIRM = 2,
   MSG_HEALTH_UPDATE = 3,
   MSG_PLAYER_DEATH = 4,
-  MSG_TREE_POSITIONS = 5
+  MSG_TREE_POSITIONS = 5,
+  MSG_MATCH_START = 6
 };
 // struct for all the messages
 struct NetworkPacket {
@@ -73,6 +78,10 @@ struct HealthPacket : NetworkPacket {
   float mana;
 };
 
+struct MatchStartPacket : NetworkPacket {
+  char match_id[64];
+};
+
 struct Character {
   float health = 300.0f;
   float mana = 300.0f;
@@ -83,6 +92,7 @@ struct Character {
   bool isDead = false;
   bool deathSoundPlayed = false;
   bool is_local = false; // to check if its a local character or opponent
+  uint8_t last_hit_by = 255;
   Vector2 pos = {};
   Rectangle rect = {0, 0, 20, 40};
   uint8_t id = 0; // network id
@@ -331,6 +341,11 @@ int main() {
           all_players[0].mana -= 5.0f;
           all_players[0].is_cast = true;
 
+          g_recorder.logSpellCast(all_players[0].id, 1, mouse_world.x,
+                                  mouse_world.y, all_players[0].pos.x,
+                                  all_players[0].pos.y, new_ball.damage,
+                                  new_ball.spell_id);
+
           if (state == "MULTIPLAYER") {
             SpellCastPacket spellPacket;
             spellPacket.type = MSG_SPELL_CAST;
@@ -372,6 +387,11 @@ int main() {
 
           all_players[0].mana -= 5.0f;
           all_players[0].is_cast = true;
+
+          g_recorder.logSpellCast(all_players[0].id, 2, mouse_world.x,
+                                  mouse_world.y, all_players[0].pos.x,
+                                  all_players[0].pos.y, new_ball.damage,
+                                  new_ball.spell_id);
 
           if (state == "MULTIPLAYER") {
             SpellCastPacket spellPacket;
@@ -630,6 +650,25 @@ int main() {
            all_players[1].deathTime >= 1.0f);
 
       if (shouldReset) {
+        // End recording
+        int winner_id = 0;
+        int loser_id = 0;
+
+        if (all_players.size() >= 2) {
+          winner_id =
+              all_players[0].isDead ? all_players[1].id : all_players[0].id;
+          loser_id =
+              all_players[0].isDead ? all_players[0].id : all_players[1].id;
+        }
+
+        g_recorder.endMatch(winner_id, loser_id);
+
+        // Upload (async so game resets immediately)
+        g_uploader.uploadMatchAsync(
+            g_recorder.getFilename(), g_player1_name, g_player2_name,
+            winner_id == 0 ? g_player1_name : g_player2_name,
+            getMatchDuration(), g_recorder.getMatchId()); // Track duration
+
         state = "MENU";
         // reset local player
         all_players[0].health = 300.0f;
@@ -726,6 +765,21 @@ int main() {
                 enet_packet_create(&posPacket, sizeof(PositionPacket), 0);
 
             enet_peer_send(clientPeer, 0, posPkt);
+
+            g_recorder.startMatch(all_players[0].id, g_player1_name,
+                                  all_players[1].id, g_player2_name);
+            g_recorder.logTrees(tree_pos);
+            g_match_start_time = GetTime();
+
+            // Send match start packet to client so they record with same ID
+            MatchStartPacket startPkt;
+            startPkt.type = MSG_MATCH_START;
+            startPkt.playerId = 0;
+            strncpy(startPkt.match_id, g_recorder.getMatchId().c_str(), 64);
+
+            ENetPacket *matchPkt = enet_packet_create(
+                &startPkt, sizeof(MatchStartPacket), ENET_PACKET_FLAG_RELIABLE);
+            enet_peer_send(clientPeer, 0, matchPkt);
 
             state = "MULTIPLAYER";
           }
@@ -908,11 +962,37 @@ int main() {
               }
               break;
             }
+            case MSG_MATCH_START: {
+              MatchStartPacket *startPkt =
+                  (MatchStartPacket *)event.packet->data;
+              printf("Match started with ID: %s\n", startPkt->match_id);
+
+              // Joiner starts recording with host's match ID
+              g_recorder.startMatch(all_players[0].id, g_player2_name,
+                                    all_players[1].id, g_player1_name,
+                                    startPkt->match_id);
+              g_recorder.logTrees(tree_pos);
+              g_match_start_time = GetTime();
+              break;
+            }
             }
             enet_packet_destroy(event.packet);
           }
         }
       }
+
+      static int position_log_counter = 0;
+      position_log_counter++;
+      if (position_log_counter >= 30 &&
+          all_players.size() >= 2) { // Log every 30 frames (0.5 sec at 60fps)
+        position_log_counter = 0;
+        g_recorder.logPosition(all_players[0].id, all_players[0].pos.x,
+                               all_players[0].pos.y, all_players[0].health,
+                               all_players[0].mana, all_players[1].id,
+                               all_players[1].pos.x, all_players[1].pos.y,
+                               all_players[1].health, all_players[1].mana);
+      }
+
       HideCursor();
       ClearBackground(BLUE);
       BeginMode2D(camera);
@@ -1006,6 +1086,9 @@ int main() {
             ball.has_hit = true;
 
             player.health -= ball.damage;
+            player.last_hit_by = ball.owner_id;
+            g_recorder.logHit(ball.owner_id, player.id, ball.damage,
+                              ball.spell_id);
 
             if (state == "MULTIPLAYER") {
               HitPacket hitPacket;
@@ -1049,6 +1132,7 @@ int main() {
 
         if (all_players[i].health <= 0.0f && !all_players[i].isDead) {
           all_players[i].isDead = true;
+          g_recorder.logDeath(all_players[i].id, all_players[i].last_hit_by);
 
           // Notify the other player of the death
           if (i == 0 && state == "MULTIPLAYER") {
@@ -1129,6 +1213,25 @@ int main() {
            all_players[1].deathTime >= 1.0f);
 
       if (shouldReset) {
+        // End recording
+        int winner_id = 0;
+        int loser_id = 0;
+
+        if (all_players.size() >= 2) {
+          winner_id =
+              all_players[0].isDead ? all_players[1].id : all_players[0].id;
+          loser_id =
+              all_players[0].isDead ? all_players[0].id : all_players[1].id;
+        }
+
+        g_recorder.endMatch(winner_id, loser_id);
+
+        // Upload (async so game resets immediately)
+        g_uploader.uploadMatchAsync(
+            g_recorder.getFilename(), g_player1_name, g_player2_name,
+            winner_id == 0 ? g_player1_name : g_player2_name,
+            getMatchDuration(), g_recorder.getMatchId()); // Track duration
+
         state = "MENU";
         // reset local player
         all_players[0].health = 300.0f;
