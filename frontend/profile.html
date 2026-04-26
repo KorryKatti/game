@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile | Wizard Duel</title>
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+</head>
+<body>
+    <div id="nav-placeholder"></div>
+    <main class="container">
+        <section class="fade-in">
+            <h2 style="margin-bottom: var(--spacing-xl);">YOUR ARCANUM</h2>
+            <div class="card" id="profile-details" style="max-width: 600px; margin: 0 auto;">
+                <div style="text-align: center; margin-bottom: var(--spacing-xl);">
+                    <div id="profile-avatar-placeholder" style="width: 120px; height: 120px; border: 2px solid var(--color-dark-gray); padding: 8px; margin: 0 auto var(--spacing-md); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 40px; background: var(--color-light-gray);">
+                        WD
+                    </div>
+                    <h3 id="profile-username">LOADING...</h3>
+                </div>
+                <div class="grid-3" style="text-align: center;">
+                    <div>
+                        <div class="stat-label">ELO</div>
+                        <div class="stat-value" id="profile-elo">-</div>
+                    </div>
+                    <div>
+                        <div class="stat-label">WINS</div>
+                        <div class="stat-value" id="profile-wins">-</div>
+                    </div>
+                    <div>
+                        <div class="stat-label">LOSSES</div>
+                        <div class="stat-value" id="profile-losses">-</div>
+                    </div>
+                </div>
+                <hr style="margin: var(--spacing-xl) 0; border: 0; border-top: 1px solid var(--color-border);">
+                <div style="font-size: 12px; opacity: 0.7; text-align: center;">
+                    MEMBER SINCE <span id="profile-created">-</span>
+                </div>
+            </div>
+        </section>
+    </main>
+    <div id="footer-placeholder"></div>
+    <script type="module" src="/src/profile.js"></script>
+</body>
+</html>

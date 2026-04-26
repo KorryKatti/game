@@ -8,6 +8,8 @@
 *.o
 *.obj
 build/
+.venv/
+.env
 
 # Precompiled Headers
 *.gch
@@ -15,7 +17,6 @@ build/
 
 # Linker files
 *.ilk
-planz.md
 
 # Debugger Files
 *.pdb

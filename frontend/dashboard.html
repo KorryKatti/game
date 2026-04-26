@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Wizard Duel</title>
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 25% 50% 25%;
+            gap: var(--spacing-lg);
+            padding: var(--spacing-lg) 0;
+        }
+        .match-viewer {
+            background-color: var(--color-white);
+            border: 1px solid var(--color-border);
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        .match-header {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--color-light-gray);
+        }
+        .match-split { flex: 1; display: flex; }
+        .match-red { flex: 1; background-color: var(--color-red); color: white; padding: var(--spacing-md); display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .match-blue { flex: 1; background-color: var(--color-blue); color: white; padding: var(--spacing-md); display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .match-center-strip { width: 60px; background-color: var(--color-dark-gray); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: var(--font-display); font-size: 11px; }
+        .action-bar { padding: var(--spacing-md); border-top: 1px solid var(--color-border); display: flex; gap: var(--spacing-sm); justify-content: center; }
+        .log-panel { padding: var(--spacing-md); height: 150px; overflow-y: auto; font-family: var(--font-display); font-size: 12px; border-top: 1px solid var(--color-border); background-color: var(--color-light-gray); }
+        .stat-label { font-size: 11px; text-transform: uppercase; opacity: 0.7; margin-bottom: 4px; }
+        .stat-value { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
+        .online-badge { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #2ECC71; margin-right: 4px; }
+        @media (max-width: 1200px) { .dashboard-grid { grid-template-columns: 30% 70%; } .right-col { grid-column: span 2; } }
+        @media (max-width: 768px) { .dashboard-grid { grid-template-columns: 1fr; } .right-col { grid-column: span 1; } }
+    </style>
+</head>
+<body>
+    <div id="nav-placeholder"></div>
+    <main class="container">
+        <div class="dashboard-grid">
+            <div class="left-col fade-in" style="animation-delay: 100ms;">
+                <div class="card" style="margin-bottom: var(--spacing-lg);">
+                    <h4 style="margin-bottom: var(--spacing-md);">YOUR PROFILE</h4>
+                    <div id="profile-summary">Loading...</div>
+                </div>
+                <div class="card">
+                    <h4 style="margin-bottom: var(--spacing-md);">RECENT MATCHES</h4>
+                    <ul id="matches-list" style="display: flex; flex-direction: column; gap: var(--spacing-sm);"></ul>
+                </div>
+            </div>
+            <div class="center-col fade-in" style="animation-delay: 200ms;">
+                <div class="match-viewer">
+                    <div class="match-header">
+                        <h4 class="font-mono">LIVE ARENA</h4>
+                        <div class="font-mono" style="font-size: 12px;">ACTIVE</div>
+                    </div>
+                    <div class="match-split">
+                        <div class="match-red">
+                            <div class="font-mono" style="font-size: 16px;">PLAYER 1</div>
+                            <div class="font-mono" style="font-size: 24px; margin-top: 10px;">100 HP</div>
+                        </div>
+                        <div class="match-center-strip">
+                            <div>VS</div>
+                        </div>
+                        <div class="match-blue">
+                            <div class="font-mono" style="font-size: 16px;">PLAYER 2</div>
+                            <div class="font-mono" style="font-size: 24px; margin-top: 10px;">100 HP</div>
+                        </div>
+                    </div>
+                    <div class="action-bar">
+                        <button class="btn btn-red">FIREBALL</button>
+                        <button class="btn btn-blue">FROST BOLT</button>
+                        <button class="btn">SHIELD</button>
+                    </div>
+                    <div class="log-panel" id="match-log"></div>
+                </div>
+            </div>
+            <div class="right-col fade-in" style="animation-delay: 300ms;">
+                <div class="card">
+                    <h4 style="margin-bottom: var(--spacing-md);">ONLINE PLAYERS</h4>
+                    <ul id="online-list" style="display: flex; flex-direction: column; gap: var(--spacing-md);"></ul>
+                </div>
+            </div>
+        </div>
+    </main>
+    <div id="footer-placeholder"></div>
+    <script type="module" src="/src/dashboard.js"></script>
+</body>
+</html>

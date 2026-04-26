@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard | Wizard Duel</title>
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+</head>
+<body>
+    <div id="nav-placeholder"></div>
+    <main class="container">
+        <section class="fade-in">
+            <h2 style="margin-bottom: var(--spacing-xl);">GLOBAL RANKINGS</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>RANK</th>
+                        <th>PLAYER</th>
+                        <th>WINS</th>
+                        <th>LOSSES</th>
+                        <th>ELO</th>
+                        <th>REGION</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                </tbody>
+            </table>
+        </section>
+    </main>
+    <div id="footer-placeholder"></div>
+    <script type="module" src="/src/leaderboard.js"></script>
+</body>
+</html>
