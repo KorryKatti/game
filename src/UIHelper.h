@@ -85,6 +85,30 @@ class UIHelper {
         }
 
         // homelander happy very large sunlight emoji
-}
+        static std::string getAPIKeyInput(){
+            return std::string(apiKeyInput);
+        }
 
-#endif UI_HELPER_H
+        static void resetAPIKeyInput(){
+            apiKeyInput[0]='\0';
+        }
+
+        static void updateHeartbeat(float deltaTime,GameClient& client){
+            heartbeatTimer+=deltaTime;
+            if (heartbeatTimer>=30.0f){
+                client.heartbeat();
+                heartbeatTimer=0.0f;
+            }
+        }
+        static void resetHeartbeatTimer(){
+            heartbeatTimer = 0.0f;
+        }
+};
+
+// static members
+char UIHelper::apiKeyInput[256]={0};
+bool UIHelper::showPlayerList=false;
+int UIHelper::selectedPlayerIndex=-1;
+float UIHelper::heartbeatTimer=0.0f;
+
+#endif
