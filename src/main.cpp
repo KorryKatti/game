@@ -6,6 +6,10 @@
 #include "httplib.h"
 #include "island_generator.h"
 #include <enet/enet.h>
+#include "GameClient.h"
+#include "UIHelper.h"
+
+GameClient g_gameClient;
 
 std::string connectionState = "DISCONNECTED";
 static int trees_received = 0;
@@ -19,6 +23,9 @@ MatchUploader
     g_uploader("http://127.0.0.1:3000"); // Change IP later // game main server
 std::string g_player1_name = "Wizard";
 std::string g_player2_name = "Opponent";
+std::vector<OnlinePlayer> g_onlinePlayers;
+std::string g_selectedPlayerIP = "";
+int g_selectedPlayerPort = 0;
 
 const char *SERVER_IP =
     "127.0.0.1"; // game p2p server different from main server
@@ -298,6 +305,8 @@ int main() {
 
   while (!WindowShouldClose()) {
     Vector2 mouse_world = GetScreenToWorld2D(GetMousePosition(), camera);
+    float deltaTime = GetFrameTime();
+    UIHelper::updateHeartbeat(deltaTime, g_gameClient);
 
     if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && all_players[0].mana > 12.0f) {
       all_players[0].mana = all_players[0].mana - 10.0f;
@@ -464,52 +473,88 @@ int main() {
       ShowCursor();
       ClearBackground(BLACK);
 
-      DrawText("WIZARD DUEL", screenWidth / 2 - 180, 80, 50, WHITE);
+      if (!g_gameClient.hasAPIKey()) {
+        UIHelper::drawAPIKeyPrompt();
 
-      // Adjust button positions to accommodate more buttons
-      Rectangle singleBtn = {screenWidth / 2 - 150, 180, 300, 60};
-      Rectangle hostBtn = {screenWidth / 2 - 150, 260, 300, 60};
-      Rectangle joinBtn = {screenWidth / 2 - 150, 340, 300, 60};
-      Rectangle quitBtn = {screenWidth / 2 - 150, 420, 300, 60};
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+          Rectangle submitBtn = {screenWidth / 2 - 100, 350, 200, 50};
+          if (CheckCollisionPointRec(GetMousePosition(), submitBtn)) {
+            if (g_gameClient.validateAndLogin(UIHelper::getAPIKeyInput())) {
+              UIHelper::resetAPIKeyInput();
+              // Success - stay in menu
+            } else {
+              DrawText("Invalid API Key", screenWidth / 2 - 100, 420, 20, RED);
+            }
+          }
+        }
+      } else {
+        DrawText("WIZARD DUEL", screenWidth / 2 - 180, 80, 50, WHITE);
 
-      Vector2 mouse = GetMousePosition();
+        Rectangle singleBtn = {screenWidth / 2 - 150, 180, 300, 60};
+        Rectangle hostBtn = {screenWidth / 2 - 150, 260, 300, 60};
+        Rectangle joinBtn = {screenWidth / 2 - 150, 340, 300, 60};
+        Rectangle findBtn = {screenWidth / 2 - 150, 420, 300, 60};
+        Rectangle quitBtn = {screenWidth / 2 - 150, 500, 300, 60};
 
-      bool singleHover = CheckCollisionPointRec(mouse, singleBtn);
-      bool hostHover = CheckCollisionPointRec(mouse, hostBtn);
-      bool joinHover = CheckCollisionPointRec(mouse, joinBtn);
-      bool quitHover = CheckCollisionPointRec(mouse, quitBtn);
+        Vector2 mouse = GetMousePosition();
 
-      // Draw buttons
-      DrawRectangleRec(singleBtn, singleHover ? MAROON : RED);
-      DrawRectangleRec(hostBtn, hostHover ? DARKGREEN : GREEN);
-      DrawRectangleRec(joinBtn, joinHover ? DARKBLUE : BLUE);
-      DrawRectangleRec(quitBtn, quitHover ? DARKGRAY : GRAY);
+        DrawRectangleRec(singleBtn, CheckCollisionPointRec(mouse, singleBtn) ? MAROON : RED);
+        DrawRectangleRec(hostBtn, CheckCollisionPointRec(mouse, hostBtn) ? DARKGREEN : GREEN);
+        DrawRectangleRec(joinBtn, CheckCollisionPointRec(mouse, joinBtn) ? DARKBLUE : BLUE);
+        DrawRectangleRec(findBtn, CheckCollisionPointRec(mouse, findBtn) ? GOLD : ORANGE);
+        DrawRectangleRec(quitBtn, CheckCollisionPointRec(mouse, quitBtn) ? DARKGRAY : GRAY);
 
-      // Button text
-      DrawText("SINGLEPLAYER", singleBtn.x + 55, singleBtn.y + 18, 25, WHITE);
+        DrawText("SINGLEPLAYER", singleBtn.x + 55, singleBtn.y + 18, 25, WHITE);
+        DrawText("HOST GAME", hostBtn.x + 70, hostBtn.y + 18, 25, WHITE);
+        DrawText("JOIN GAME", joinBtn.x + 75, joinBtn.y + 18, 25, WHITE);
+        DrawText("FIND PLAYERS", findBtn.x + 55, findBtn.y + 18, 25, BLACK);
+        DrawText("QUIT", quitBtn.x + 115, quitBtn.y + 18, 25, WHITE);
 
-      DrawText("HOST GAME", hostBtn.x + 70, hostBtn.y + 18, 25, WHITE);
+        if (CheckCollisionPointRec(mouse, singleBtn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+          state = "SINGLE";
+        } else if (CheckCollisionPointRec(mouse, hostBtn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+          g_gameClient.goOnline(SERVER_PORT);
+          state = "HOST";
+        } else if (CheckCollisionPointRec(mouse, joinBtn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+          state = "JOIN";
+        } else if (CheckCollisionPointRec(mouse, findBtn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+          g_onlinePlayers = g_gameClient.getOnlinePlayers();
+          state = "PLAYER_LIST";
+        } else if (CheckCollisionPointRec(mouse, quitBtn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+          break;
+        }
+      }
+      EndDrawing();
+    } else if (state == "PLAYER_LIST") {
+      static std::vector<OnlinePlayer> players;
+      static int selectedPort = 0;
+      static std::string selectedIP = "";
+      static bool fetched = false;
 
-      DrawText("JOIN GAME", joinBtn.x + 75, joinBtn.y + 18, 25, WHITE);
-
-      DrawText("QUIT", quitBtn.x + 115, quitBtn.y + 18, 25, WHITE);
-
-      // Button interactions
-      if (singleHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        state = "SINGLE";
+      if (!fetched) {
+        players = g_gameClient.getOnlinePlayers();
+        fetched = true;
       }
 
-      if (hostHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        state = "HOST";
+      UIHelper::drawPlayerList(players, selectedPort, selectedIP);
+
+      if (selectedPort != 0) {
+        // Store opponent info
+        // Then transition to host or join
+        state = "MENU";
+        fetched = false;
+        selectedPort = 0;
+        selectedIP.clear();
+        // TODO: start connection to selected IP when needed
       }
 
-      if (joinHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        state = "JOIN";
+      Rectangle backBtn = {50, GetScreenHeight() - 80, 150, 50};
+      if (CheckCollisionPointRec(GetMousePosition(), backBtn) &&
+          IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        state = "MENU";
+        fetched = false;
       }
 
-      if (quitHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        break;
-      }
       EndDrawing();
     } else if (state == "SINGLE") {
       HideCursor();
@@ -663,11 +708,13 @@ int main() {
 
         g_recorder.endMatch(winner_id, loser_id);
 
-        // Upload (async so game resets immediately)
-        g_uploader.uploadMatchAsync(
-            g_recorder.getFilename(), g_player1_name, g_player2_name,
+        // Upload match using GameClient
+        g_gameClient.uploadMatch(
+            g_recorder.getFilename(),
+            g_player2_name,
             winner_id == 0 ? g_player1_name : g_player2_name,
-            getMatchDuration(), g_recorder.getMatchId()); // Track duration
+            (int)getMatchDuration(),
+            g_recorder.getMatchId());
 
         state = "MENU";
         // reset local player
@@ -1226,11 +1273,13 @@ int main() {
 
         g_recorder.endMatch(winner_id, loser_id);
 
-        // Upload (async so game resets immediately)
-        g_uploader.uploadMatchAsync(
-            g_recorder.getFilename(), g_player1_name, g_player2_name,
+        // Upload match using GameClient
+        g_gameClient.uploadMatch(
+            g_recorder.getFilename(),
+            g_player2_name,
             winner_id == 0 ? g_player1_name : g_player2_name,
-            getMatchDuration(), g_recorder.getMatchId()); // Track duration
+            (int)getMatchDuration(),
+            g_recorder.getMatchId());
 
         state = "MENU";
         // reset local player

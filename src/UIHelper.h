@@ -38,7 +38,7 @@ class UIHelper {
                 key = GetCharPressed();
             }
             // submit button
-            Rectangle submitBtn = {GetScreenWidth()/2-100,250,200,50};
+            Rectangle submitBtn = {GetScreenWidth()/2-100,350,200,50};
             bool hover = CheckCollisionPointRec(GetMousePosition(),submitBtn);
             DrawRectangleRec(submitBtn,hover?GREEN:DARKGREEN);
             DrawText("SUBMIT",submitBtn.x+60,submitBtn.y+12,25,WHITE);
