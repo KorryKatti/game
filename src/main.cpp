@@ -101,7 +101,7 @@ struct Character {
   bool is_local = false; // to check if its a local character or opponent
   uint8_t last_hit_by = 255;
   Vector2 pos = {};
-  Rectangle rect = {0, 0, 20, 40};
+  Rectangle rect = {0, 0, 30, 60};
   uint8_t id = 0; // network id
 };
 
@@ -126,10 +126,10 @@ struct Ball {
 std::unordered_map<uint32_t, Ball> active_spells; // Track spells by ID
 
 bool checkCollision(Vector2 player_pos, std::vector<Vector2> &trees_pos) {
-  Rectangle player_rect = {player_pos.x, player_pos.y, 20, 40};
+  Rectangle player_rect = {player_pos.x, player_pos.y, 30, 60};
 
   for (int i = 0; i < trees_pos.size(); i++) {
-    Rectangle tree_rect = {trees_pos[i].x, trees_pos[i].y, 20, 60};
+    Rectangle tree_rect = {trees_pos[i].x, trees_pos[i].y, 30, 90};
 
     if (CheckCollisionRecs(player_rect, tree_rect)) {
       return true;
@@ -288,7 +288,7 @@ int main() {
     all_players[0].pos.y = y_distr(gen);
   } while (checkCollision(all_players[0].pos, tree_pos));
 
-  Rectangle tree_rect = {0, 0, 20, 60};
+  Rectangle tree_rect = {0, 0, 30, 90};
 
   SetTargetFPS(60);
   Camera2D camera = {0};
@@ -330,7 +330,7 @@ int main() {
 
     // Update camera target to follow local player
     camera.target =
-        (Vector2){all_players[0].pos.x + 20, all_players[0].pos.y + 20};
+        (Vector2){all_players[0].pos.x + all_players[0].rect.width / 2, all_players[0].pos.y + all_players[0].rect.height / 2};
 
     if (IsKeyDown(KEY_ONE)) {
       if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
@@ -430,7 +430,7 @@ int main() {
     // Handle tree collision for balls
     for (int b = 0; b < ball_vec.size(); b++) {
       for (int t = 0; t < tree_pos.size(); t++) {
-        Rectangle tree_rect = {tree_pos[t].x, tree_pos[t].y, 20, 60};
+        Rectangle tree_rect = {tree_pos[t].x, tree_pos[t].y, 30, 90};
 
         if (CheckCollisionCircleRec(ball_vec[b].ball_pos, ball_vec[b].ball_r,
                                     tree_rect)) {
@@ -576,15 +576,15 @@ int main() {
 
         // Draw health and mana bars for each player
         DrawRectangle((int)all_players[i].pos.x - 10,
-                      (int)all_players[i].pos.y - 20, 40, 5, DARKGRAY);
+                      (int)all_players[i].pos.y - 30, 50, 5, DARKGRAY);
         DrawRectangle((int)all_players[i].pos.x - 10,
-                      (int)all_players[i].pos.y - 20,
-                      (all_players[i].health / 300.0f) * 40, 5, RED);
+                      (int)all_players[i].pos.y - 30,
+                      (all_players[i].health / 300.0f) * 50, 5, RED);
         DrawRectangle((int)all_players[i].pos.x - 10,
-                      (int)all_players[i].pos.y - 13, 40, 5, DARKGRAY);
+                      (int)all_players[i].pos.y - 23, 50, 5, DARKGRAY);
         DrawRectangle((int)all_players[i].pos.x - 10,
-                      (int)all_players[i].pos.y - 13,
-                      (all_players[i].mana / 300.0f) * 40, 5, PURPLE);
+                      (int)all_players[i].pos.y - 23,
+                      (all_players[i].mana / 300.0f) * 50, 5, PURPLE);
       }
 
       // Draw cursor in world space
@@ -1059,15 +1059,15 @@ int main() {
 
         // Draw health and mana bars for each player
         DrawRectangle((int)all_players[i].pos.x - 10,
-                      (int)all_players[i].pos.y - 20, 40, 5, DARKGRAY);
+                      (int)all_players[i].pos.y - 30, 50, 5, DARKGRAY);
         DrawRectangle((int)all_players[i].pos.x - 10,
-                      (int)all_players[i].pos.y - 20,
-                      (all_players[i].health / 300.0f) * 40, 5, RED);
+                      (int)all_players[i].pos.y - 30,
+                      (all_players[i].health / 300.0f) * 50, 5, RED);
         DrawRectangle((int)all_players[i].pos.x - 10,
-                      (int)all_players[i].pos.y - 13, 40, 5, DARKGRAY);
+                      (int)all_players[i].pos.y - 23, 50, 5, DARKGRAY);
         DrawRectangle((int)all_players[i].pos.x - 10,
-                      (int)all_players[i].pos.y - 13,
-                      (all_players[i].mana / 300.0f) * 40, 5, PURPLE);
+                      (int)all_players[i].pos.y - 23,
+                      (all_players[i].mana / 300.0f) * 50, 5, PURPLE);
       }
 
       // player IDs for debugging
@@ -1126,7 +1126,7 @@ int main() {
           if (player.isDead)
             continue;
 
-          Rectangle playerRect = {player.pos.x, player.pos.y, 20, 40};
+          Rectangle playerRect = {player.pos.x, player.pos.y, 30, 60};
 
           if (CheckCollisionCircleRec(ball.ball_pos, ball.ball_r, playerRect)) {
             // Hit detected!

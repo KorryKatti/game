@@ -24,6 +24,7 @@ private:
     std::string server_url;
     bool is_online;
     std::string public_ip;
+    bool testing = true; // TODO: set to false when real game server is ready
     
     std::string getStoragePath() {
         return "wizard_api_key.txt";
@@ -70,11 +71,16 @@ public:
     }
     
     bool validateAndLogin(const std::string& key) {
+        if (testing) {
+            if (!key.empty()) {
+                saveAPIKey(key);
+                return true;
+            }
+            return false;
+        }
         httplib::Client client(server_url.c_str());
         client.set_bearer_token_auth(key);
-        
         auto res = client.Get("/v1/profile");
-        
         if (res && res->status == 200) {
             saveAPIKey(key);
             return true;
