@@ -149,6 +149,13 @@
                     <h4 style="font-size: 12px; color: var(--color-gold-dim); margin-bottom: var(--spacing-md);">YOUR PROFILE</h4>
                     <div id="profile-summary" style="font-size: 13px; color: var(--color-text-dim);">Loading...</div>
                 </div>
+                <div class="card" style="margin-bottom: var(--spacing-lg);">
+                    <h4 style="font-size: 12px; color: var(--color-gold-dim); margin-bottom: var(--spacing-md);">API KEY</h4>
+                    <div id="api-key-section" style="font-size: 11px;">
+                        <div style="font-family: var(--font-mono); font-size: 10px; color: var(--color-text-dim); word-break: break-all; background: var(--color-surface-raised); padding: var(--spacing-sm); border: 1px solid var(--color-border); margin-bottom: var(--spacing-sm);" id="api-key-display">Loading...</div>
+                        <p style="font-size: 10px; color: var(--color-text-dim); line-height: 1.6;">Paste this into <code style="font-size: 9px;">wizard_api_key.txt</code> next to the game client to authenticate.</p>
+                    </div>
+                </div>
                 <div class="card">
                     <h4 style="font-size: 12px; color: var(--color-gold-dim); margin-bottom: var(--spacing-md);">RECENT DUELS</h4>
                     <ul id="matches-list" style="display: flex; flex-direction: column;"></ul>
@@ -166,20 +173,20 @@
                     <div class="match-body">
                         <div class="match-side match-red" style="text-align: center;">
                             <div class="player-name" style="color: var(--color-crimson);">CHALLENGER</div>
-                            <div class="player-hp red">100</div>
+                            <div class="player-hp red">300</div>
                             <div style="font-family: var(--font-mono); font-size: 10px; color: var(--color-text-dim); margin-top: 4px;">HP</div>
                         </div>
                         <div class="match-divider"><span>VS</span></div>
                         <div class="match-side match-blue" style="text-align: center;">
                             <div class="player-name" style="color: var(--color-teal);">OPPONENT</div>
-                            <div class="player-hp teal">100</div>
+                            <div class="player-hp teal">300</div>
                             <div style="font-family: var(--font-mono); font-size: 10px; color: var(--color-text-dim); margin-top: 4px;">HP</div>
                         </div>
                     </div>
                     <div class="action-bar">
-                        <button class="btn btn-red btn-sm">FIREBALL</button>
-                        <button class="btn btn-teal btn-sm">FROST BOLT</button>
-                        <button class="btn btn-sm" style="border-color: var(--color-gold-dim); color: var(--color-gold-dim);">SHIELD</button>
+                        <button class="btn btn-red btn-sm">BLOOD RED</button>
+                        <button class="btn btn-teal btn-sm">DARK BLUE</button>
+                        <button class="btn btn-sm" style="border-color: var(--color-gold-dim); color: var(--color-gold-dim);">MANA SHIELD</button>
                     </div>
                     <div class="log-panel" id="match-log">
                         <div>// Awaiting duelist connection ...</div>

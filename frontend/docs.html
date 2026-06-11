@@ -39,13 +39,13 @@
             <div class="grid-3" style="align-items: start;">
                 <div class="spell-card" style="grid-column: span 2;">
                     <h4>CORE MECHANICS</h4>
-                    <p>Wizard Duel is a real-time tactical dueling platform. Victory is determined by energy management, spell accuracy, and positioning.</p>
+                    <p>Wizard Duel is a real-time 1v1 dueling game. Victory is determined by mana management, aim, and positioning.</p>
 
                     <h5 style="margin: var(--spacing-lg) 0 var(--spacing-sm);">1. MOVEMENT &amp; POSITIONING</h5>
-                    <p>Combat occurs on a grid-based arena. Positioning affects spell travel time and line-of-sight.</p>
+                    <p>Free movement with WASD in an arena scattered with destructible trees. Trees block projectiles and can be destroyed.</p>
 
                     <h5 style="margin: var(--spacing-lg) 0 var(--spacing-sm);">2. SPELL CASTING</h5>
-                    <p>Every spell costs energy and has a cooldown. Chaining spells requires precise timing to avoid depletion.</p>
+                    <p>Hold <strong>1</strong> or <strong>2</strong> + Left Click to cast. No cooldowns — only your mana pool limits you. Right Click drains mana to heal. Zoom out (hold Z) to regenerate mana faster.</p>
 
                     <h5 style="margin: var(--spacing-lg) 0 var(--spacing-sm);">3. RANKING SYSTEM</h5>
                     <p>ELO calculates skill based on match outcomes. Defeating higher-ranked opponents yields greater gains.</p>
@@ -55,19 +55,25 @@
                     <h4>SPELL ARSENAL</h4>
                     <ul style="display: flex; flex-direction: column; gap: var(--spacing-md); margin-top: var(--spacing-md);">
                         <li>
-                            <strong style="color: var(--color-crimson);">FIREBALL</strong>
-                            <div style="font-size: 12px; color: var(--color-text-dim); margin-top: 2px;">High damage, medium speed. Primary offensive tool.</div>
+                            <strong style="color: var(--color-crimson);">BLOOD RED</strong>
+                            <div style="font-size: 12px; color: var(--color-text-dim); margin-top: 2px;">Hold <strong>1</strong> + Left Click. High damage (35), medium speed, large radius.</div>
                         </li>
                         <li>
-                            <strong style="color: var(--color-teal);">FROST BOLT</strong>
-                            <div style="font-size: 12px; color: var(--color-text-dim); margin-top: 2px;">Low damage, slows target. Strategic utility.</div>
+                            <strong style="color: var(--color-teal);">DARK BLUE</strong>
+                            <div style="font-size: 12px; color: var(--color-text-dim); margin-top: 2px;">Hold <strong>2</strong> + Left Click. Lower damage (25), high speed, small radius.</div>
                         </li>
                         <li>
-                            <strong style="color: var(--color-gold-dim);">ARCANE SHIELD</strong>
-                            <div style="font-size: 12px; color: var(--color-text-dim); margin-top: 2px;">Negates incoming damage for 1.5 seconds.</div>
+                            <strong style="color: var(--color-gold-dim);">MANA SHIELD</strong>
+                            <div style="font-size: 12px; color: var(--color-text-dim); margin-top: 2px;"><strong>Right Click</strong> while holding &gt;12 mana. Drains 10 mana, heals 2 HP.</div>
                         </li>
                     </ul>
                 </div>
+            </div>
+
+            <div class="spell-card" style="margin-top: var(--spacing-lg);">
+                <h4>GAME CLIENT</h4>
+                <p style="margin-top: var(--spacing-md);">Wizard Duel is a desktop game built with C++ and Raylib. Download the game client, then use your API key from the dashboard to authenticate.</p>
+                <p style="margin-top: var(--spacing-sm); font-size: 12px; color: var(--color-text-dim);">Create a file named <code>wizard_api_key.txt</code> in the game directory and paste your key inside. The game reads it on startup.</p>
             </div>
 
             <div class="spell-card" style="margin-top: var(--spacing-lg);">

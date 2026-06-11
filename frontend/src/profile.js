@@ -13,7 +13,11 @@ async function initProfile() {
         const profile = await WizardAPI.getProfile();
         const avatarPlaceholder = document.getElementById('profile-avatar-placeholder');
         if (avatarPlaceholder) {
-            avatarPlaceholder.textContent = profile.username.substring(0, 2).toUpperCase();
+            if (profile.avatar_url) {
+                avatarPlaceholder.innerHTML = `<img src="${profile.avatar_url}" style="width: 100px; height: 100px; object-fit: cover;">`;
+            } else {
+                avatarPlaceholder.textContent = profile.username.substring(0, 2).toUpperCase();
+            }
         }
         document.getElementById('profile-username').textContent = profile.username.toUpperCase();
         document.getElementById('profile-elo').textContent = profile.elo;
