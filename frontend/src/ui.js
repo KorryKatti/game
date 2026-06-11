@@ -9,57 +9,41 @@ export function injectUI() {
 
     if (navPlaceholder) {
         navPlaceholder.innerHTML = `
-            <nav id="main-nav">
+            <nav>
                 <div class="container nav-content">
-                    <a href="/" class="font-mono" id="logo">WIZARD DUEL</a>
+                    <a href="/" id="logo">WIZARD DUEL</a>
                     <div class="nav-links">
-                        <a href="/dashboard.html" class="${currentPath.includes('dashboard') ? 'active' : ''}">Dashboard</a>
-                        <a href="/leaderboard.html" class="${currentPath.includes('leaderboard') ? 'active' : ''}">Leaderboard</a>
-                        <a href="/docs.html" class="${currentPath.includes('docs') ? 'active' : ''}">Docs</a>
-                        ${isLoggedIn ? `<a href="/profile.html" class="${currentPath.includes('profile') ? 'active' : ''}">Profile</a>` : `<a href="/login.html">Login</a>`}
-                        <button id="theme-toggle" class="btn" style="padding: 2px 8px; font-size: 10px; margin-left: var(--spacing-sm);">DARK MODE</button>
+                        <a href="/dashboard.html" class="${currentPath.includes('dashboard') ? 'active' : ''}">Arena</a>
+                        <a href="/leaderboard.html" class="${currentPath.includes('leaderboard') ? 'active' : ''}">Rankings</a>
+                        <a href="/docs.html" class="${currentPath.includes('docs') ? 'active' : ''}">Spells</a>
+                        ${isLoggedIn
+                            ? `<a href="/profile.html" class="${currentPath.includes('profile') ? 'active' : ''}">Sanctum</a>`
+                            : `<a href="/login.html">Enter</a>`}
                     </div>
                 </div>
             </nav>
         `;
-
-        const toggle = document.getElementById('theme-toggle');
-        if (toggle) {
-            toggle.addEventListener('click', () => {
-                const isDark = document.body.classList.toggle('dark-mode');
-                localStorage.setItem('wzrd_theme', isDark ? 'dark' : 'light');
-                toggle.textContent = isDark ? 'LIGHT MODE' : 'DARK MODE';
-            });
-            
-            if (localStorage.getItem('wzrd_theme') === 'dark') {
-                document.body.classList.add('dark-mode');
-                toggle.textContent = 'LIGHT MODE';
-            }
-        }
     }
 
     if (footerPlaceholder) {
         footerPlaceholder.innerHTML = `
-            <footer style="border-top: 1px solid var(--color-border); padding: 80px 0; margin-top: 100px; background: var(--color-light-gray);">
+            <footer style="border-top: 1px solid var(--color-border); padding: 60px 0; margin-top: 80px;">
                 <div class="container">
-                    <div style="background: var(--color-red); color: white; padding: 15px; font-size: 12px; margin-bottom: 60px; text-align: center; font-family: var(--font-display); font-weight: 700; letter-spacing: 0.1em; border: 2px solid var(--color-text);">
-                        NOTICE: THIS INTERFACE IS TEMPORARY AND SUBJECT TO CHANGE UPON FINAL RELEASE.
-                    </div>
-                    <div class="grid-3" style="font-size: 12px; opacity: 0.8;">
+                    <div class="grid-3" style="font-size: 13px; color: var(--color-text-dim);">
                         <div>
-                            <h4 style="font-size: 14px; margin-bottom: var(--spacing-sm);">SYSTEM</h4>
-                            <p>A technical 1v1 dueling platform designed for competitive clarity and precision.</p>
+                            <h4 style="font-size: 12px; color: var(--color-gold-dim); margin-bottom: var(--spacing-sm);">THE ARENA</h4>
+                            <p style="line-height: 1.8;">Real-time 1v1 wizard combat. Precision, strategy, and mastery define the true duelist.</p>
                         </div>
                         <div>
-                            <h4 style="font-size: 14px; margin-bottom: var(--spacing-sm);">RESOURCES</h4>
-                            <ul style="display: flex; flex-direction: column; gap: 8px;">
-                                <li><a href="/docs.html">Documentation</a></li>
+                            <h4 style="font-size: 12px; color: var(--color-gold-dim); margin-bottom: var(--spacing-sm);">LINKS</h4>
+                            <ul style="display: flex; flex-direction: column; gap: 6px;">
+                                <li><a href="/docs.html">Spellbook</a></li>
                                 <li><a href="/leaderboard.html">Leaderboard</a></li>
                             </ul>
                         </div>
                         <div>
-                            <h4 style="font-size: 14px; margin-bottom: var(--spacing-sm);">LEGAL</h4>
-                            <p>&copy; 2026 WIZARD DUEL. ALL DATA PROTECTED.</p>
+                            <h4 style="font-size: 12px; color: var(--color-gold-dim); margin-bottom: var(--spacing-sm);">STATUS</h4>
+                            <p style="line-height: 1.8;">&copy; 2026 &middot; All rights reserved</p>
                         </div>
                     </div>
                 </div>

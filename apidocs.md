@@ -20,7 +20,13 @@ The server is built using **FastAPI**, a modern, high-performance web framework 
 
 ### 1. Authentication
 
-#### `/v1/profile` (GET)
+#### `/auth/register` (POST) ✅ DONE
+**Purpose**: Create new player account.
+
+#### `/auth/login` (POST) ✅ DONE
+**Purpose**: Login and receive API key.
+
+#### `/v1/profile` (GET) ✅ DONE
 **Purpose**: Validate API key and retrieve player profile.
 
 **Headers**:
@@ -41,7 +47,7 @@ Authorization: Bearer <api_key>
 
 ---
 
-#### `/v1/players/heartbeat` (POST)
+#### `/v1/players/heartbeat` (POST) ✅ DONE
 **Purpose**: Report player online status and connection details.
 
 **Headers**:
@@ -74,7 +80,7 @@ json
 
 ---
 
-#### `/v1/players/online` (GET)
+#### `/v1/players/online` (GET) ✅ DONE
 **Purpose**: Retrieve list of currently online players available for matchmaking.
 
 **Headers**:
@@ -112,10 +118,10 @@ json
 
 ### 2. Match Recording
 
-#### `/v1/matches` (POST)
+#### `/v1/matches` (POST) ✅ DONE
 **Purpose**: Upload completed match recording and metadata.
 
-#### `/v1/matches` (POST)
+#### `/v1/matches` (POST) ✅ DONE
 **Purpose**: Upload completed match recording and metadata.
 
 **Headers**:
@@ -205,6 +211,14 @@ g_gameClient.uploadMatch(
 
 - Multipart POST to `/v1/matches`.
 - Server groups both players' uploads by `match_id`.
+
+---
+
+#### `/v1/matches` (GET) ✅ DONE
+**Purpose**: Get match history for current user.
+
+#### `/v1/leaderboard` (GET) ✅ DONE
+**Purpose**: Get ranked player list.
 
 ---
 

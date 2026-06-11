@@ -4,22 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leaderboard | Wizard Duel</title>
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg">
 </head>
 <body>
     <div id="nav-placeholder"></div>
     <main class="container">
         <section class="fade-in">
-            <h2 style="margin-bottom: var(--spacing-xl);">GLOBAL RANKINGS</h2>
+            <div style="text-align: center; margin-bottom: var(--spacing-xl);">
+                <h3 style="color: var(--color-gold-dim); font-size: 20px;">GLOBAL RANKINGS</h3>
+                <div style="width: 40px; height: 1px; background: var(--color-gold-dim); margin: var(--spacing-md) auto;"></div>
+            </div>
             <table>
                 <thead>
                     <tr>
-                        <th>RANK</th>
-                        <th>PLAYER</th>
-                        <th>WINS</th>
-                        <th>LOSSES</th>
+                        <th>Rank</th>
+                        <th>Duelist</th>
+                        <th>Wins</th>
+                        <th>Losses</th>
                         <th>ELO</th>
-                        <th>REGION</th>
+                        <th>Region</th>
                     </tr>
                 </thead>
                 <tbody id="leaderboard-body">

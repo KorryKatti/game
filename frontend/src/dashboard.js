@@ -20,7 +20,7 @@ async function initDashboard() {
         if (profileSummary) {
             profileSummary.innerHTML = `
                 <div style="display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-md);">
-                    <div style="width: 48px; height: 48px; background: var(--color-light-gray); border: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700;">
+                    <div style="width: 48px; height: 48px; background: var(--color-surface-raised); border: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700;">
                         ${profile.username.substring(0, 2).toUpperCase()}
                     </div>
                     <div>
@@ -54,9 +54,9 @@ async function initDashboard() {
         const { matches } = await WizardAPI.getMatches(5);
         if (matchesList) {
             matchesList.innerHTML = matches.map(match => `
-                <li style="font-size: 12px; display: flex; justify-content: space-between; border-bottom: 1px solid var(--color-light-gray); padding-bottom: 4px;">
+                <li style="font-size: 12px; display: flex; justify-content: space-between; border-bottom: 1px solid var(--color-border); padding-bottom: 4px;">
                     <span>vs ${match.opponent.toUpperCase()}</span>
-                    <span style="color: ${match.result === 'win' ? 'var(--color-red)' : 'inherit'}; font-weight: 700;">${match.result.toUpperCase()}</span>
+                    <span style="color: ${match.result === 'win' ? 'var(--color-teal)' : 'var(--color-crimson)'}; font-weight: 700;">${match.result.toUpperCase()}</span>
                 </li>
             `).join('') || '<li style="font-size: 12px; opacity: 0.5;">No matches played</li>';
         }

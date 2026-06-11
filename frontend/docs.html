@@ -3,58 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documentation | Wizard Duel</title>
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <title>Spellbook | Wizard Duel</title>
+    <link rel="icon" type="image/svg+xml" href="/vite.svg">
+    <style>
+        .spell-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            padding: var(--spacing-lg);
+            transition: var(--transition-fast);
+        }
+        .spell-card:hover { border-color: var(--color-border-bright); }
+        .spell-card h4 { color: var(--color-gold); margin-bottom: var(--spacing-sm); }
+        .spell-card p { color: var(--color-text-dim); font-size: 13px; line-height: 1.8; }
+        .endpoint {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            background: var(--color-surface-raised);
+            padding: var(--spacing-md);
+            border: 1px solid var(--color-border);
+            margin-top: var(--spacing-md);
+            line-height: 2;
+        }
+    </style>
 </head>
 <body>
     <div id="nav-placeholder"></div>
 
     <main class="container">
         <section class="fade-in">
-            <h2 style="margin-bottom: var(--spacing-xl);">SYSTEM DOCUMENTATION</h2>
-            
+            <div style="text-align: center; margin-bottom: var(--spacing-xl);">
+                <h3 style="color: var(--color-gold-dim); font-size: 20px;">SPELLBOOK</h3>
+                <div style="width: 40px; height: 1px; background: var(--color-gold-dim); margin: var(--spacing-md) auto;"></div>
+            </div>
+
             <div class="grid-3" style="align-items: start;">
-                <div class="card" style="grid-column: span 2;">
+                <div class="spell-card" style="grid-column: span 2;">
                     <h4>CORE MECHANICS</h4>
-                    <p style="margin-top: var(--spacing-md);">Wizard Duel is a high-precision, real-time tactical dueling platform. Victory is determined by efficient energy management and spell accuracy.</p>
-                    
-                    <h5 style="margin: var(--spacing-lg) 0 var(--spacing-sm);">1. MOVEMENT & POSITIONING</h5>
+                    <p>Wizard Duel is a real-time tactical dueling platform. Victory is determined by energy management, spell accuracy, and positioning.</p>
+
+                    <h5 style="margin: var(--spacing-lg) 0 var(--spacing-sm);">1. MOVEMENT &amp; POSITIONING</h5>
                     <p>Combat occurs on a grid-based arena. Positioning affects spell travel time and line-of-sight.</p>
 
                     <h5 style="margin: var(--spacing-lg) 0 var(--spacing-sm);">2. SPELL CASTING</h5>
-                    <p>Every spell has an energy cost and a cooldown period. Chaining spells requires careful timing to avoid energy depletion.</p>
+                    <p>Every spell costs energy and has a cooldown. Chaining spells requires precise timing to avoid depletion.</p>
 
                     <h5 style="margin: var(--spacing-lg) 0 var(--spacing-sm);">3. RANKING SYSTEM</h5>
-                    <p>The ELO system calculates skill levels based on match outcomes. Defeating higher-ranked opponents yields greater ELO gains.</p>
+                    <p>ELO calculates skill based on match outcomes. Defeating higher-ranked opponents yields greater gains.</p>
                 </div>
 
-                <div class="card">
+                <div class="spell-card">
                     <h4>SPELL ARSENAL</h4>
                     <ul style="display: flex; flex-direction: column; gap: var(--spacing-md); margin-top: var(--spacing-md);">
                         <li>
-                            <strong>FIREBALL</strong>
-                            <div style="font-size: 12px; opacity: 0.7;">High damage, medium speed. Primary offensive tool.</div>
+                            <strong style="color: var(--color-crimson);">FIREBALL</strong>
+                            <div style="font-size: 12px; color: var(--color-text-dim); margin-top: 2px;">High damage, medium speed. Primary offensive tool.</div>
                         </li>
                         <li>
-                            <strong>FROST BOLT</strong>
-                            <div style="font-size: 12px; opacity: 0.7;">Low damage, slows target. Strategic utility.</div>
+                            <strong style="color: var(--color-teal);">FROST BOLT</strong>
+                            <div style="font-size: 12px; color: var(--color-text-dim); margin-top: 2px;">Low damage, slows target. Strategic utility.</div>
                         </li>
                         <li>
-                            <strong>ARCANE SHIELD</strong>
-                            <div style="font-size: 12px; opacity: 0.7;">Negates incoming damage for 1.5 seconds.</div>
+                            <strong style="color: var(--color-gold-dim);">ARCANE SHIELD</strong>
+                            <div style="font-size: 12px; color: var(--color-text-dim); margin-top: 2px;">Negates incoming damage for 1.5 seconds.</div>
                         </li>
                     </ul>
                 </div>
             </div>
 
-            <div class="card" style="margin-top: var(--spacing-lg);">
-                <h4>INTEGRATION API</h4>
-                <p style="margin-top: var(--spacing-md);">Developers can access match data via our REST API. Standard headers require an X-API-Key for authenticated requests.</p>
-                <code style="display: block; background: var(--color-light-gray); padding: var(--spacing-md); margin-top: var(--spacing-md); font-family: var(--font-display); font-size: 12px;">
+            <div class="spell-card" style="margin-top: var(--spacing-lg);">
+                <h4>API REFERENCE</h4>
+                <p style="margin-top: var(--spacing-md);">Access match data via REST API. Authenticate with your API key.</p>
+                <div class="endpoint">
                     GET /v1/leaderboard<br>
                     GET /v1/matches/{id}<br>
                     POST /v1/players/heartbeat
-                </code>
+                </div>
             </div>
         </section>
     </main>

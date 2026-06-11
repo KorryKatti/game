@@ -3,41 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | Wizard Duel</title>
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <title>Arena | Wizard Duel</title>
+    <link rel="icon" type="image/svg+xml" href="/vite.svg">
     <style>
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 25% 50% 25%;
+            grid-template-columns: 240px 1fr 240px;
             gap: var(--spacing-lg);
             padding: var(--spacing-lg) 0;
         }
         .match-viewer {
-            background-color: var(--color-white);
+            background: var(--color-surface);
             border: 1px solid var(--color-border);
             min-height: 400px;
             display: flex;
             flex-direction: column;
         }
         .match-header {
-            padding: var(--spacing-md);
+            padding: var(--spacing-md) var(--spacing-lg);
             border-bottom: 1px solid var(--color-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: var(--color-light-gray);
+            background: var(--color-surface-raised);
         }
-        .match-split { flex: 1; display: flex; }
-        .match-red { flex: 1; background-color: var(--color-red); color: white; padding: var(--spacing-md); display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .match-blue { flex: 1; background-color: var(--color-blue); color: white; padding: var(--spacing-md); display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .match-center-strip { width: 60px; background-color: var(--color-dark-gray); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: var(--font-display); font-size: 11px; }
-        .action-bar { padding: var(--spacing-md); border-top: 1px solid var(--color-border); display: flex; gap: var(--spacing-sm); justify-content: center; }
-        .log-panel { padding: var(--spacing-md); height: 150px; overflow-y: auto; font-family: var(--font-display); font-size: 12px; border-top: 1px solid var(--color-border); background-color: var(--color-light-gray); }
-        .stat-label { font-size: 11px; text-transform: uppercase; opacity: 0.7; margin-bottom: 4px; }
-        .stat-value { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
-        .online-badge { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #2ECC71; margin-right: 4px; }
-        @media (max-width: 1200px) { .dashboard-grid { grid-template-columns: 30% 70%; } .right-col { grid-column: span 2; } }
-        @media (max-width: 768px) { .dashboard-grid { grid-template-columns: 1fr; } .right-col { grid-column: span 1; } }
+        .match-header h4 { font-size: 13px; }
+        .match-body { flex: 1; display: flex; }
+        .match-side {
+            flex: 1;
+            padding: var(--spacing-xl);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        .match-side::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0.06;
+        }
+        .match-red {
+            background: linear-gradient(135deg, #1a0808, var(--color-surface));
+        }
+        .match-red::before { background: var(--color-crimson); }
+        .match-blue {
+            background: linear-gradient(225deg, #081a18, var(--color-surface));
+        }
+        .match-blue::before { background: var(--color-teal); }
+        .match-divider {
+            width: 1px;
+            background: var(--color-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .match-divider span {
+            font-family: var(--font-display);
+            font-size: 11px;
+            color: var(--color-text-dim);
+            background: var(--color-surface);
+            padding: 8px 4px;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .player-name {
+            font-family: var(--font-display);
+            font-size: 18px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: var(--spacing-md);
+        }
+        .player-hp {
+            font-family: var(--font-mono);
+            font-size: 32px;
+            font-weight: 700;
+        }
+        .player-hp.red { color: var(--color-crimson); }
+        .player-hp.teal { color: var(--color-teal); }
+        .action-bar {
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-top: 1px solid var(--color-border);
+            display: flex;
+            gap: var(--spacing-sm);
+            justify-content: center;
+            background: var(--color-surface-raised);
+        }
+        .log-panel {
+            padding: var(--spacing-md) var(--spacing-lg);
+            height: 120px;
+            overflow-y: auto;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            border-top: 1px solid var(--color-border);
+            background: var(--color-bg);
+            color: var(--color-text-dim);
+            line-height: 1.8;
+        }
+        .log-panel::-webkit-scrollbar { width: 4px; }
+        .log-panel::-webkit-scrollbar-thumb { background: var(--color-border); }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: var(--spacing-sm) 0;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 13px;
+        }
+        .stat-row:last-child { border-bottom: none; }
+        .stat-row .label { color: var(--color-text-dim); }
+        .stat-row .value { font-family: var(--font-mono); color: var(--color-text); }
+        .online-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--color-teal);
+            margin-right: 6px;
+            animation: pulse 2s infinite;
+        }
+        .player-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm) 0;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 13px;
+        }
+        .player-item:last-child { border-bottom: none; }
+        .player-item .name { flex: 1; }
+        .player-item .elo { font-family: var(--font-mono); font-size: 11px; color: var(--color-text-dim); }
+        .online-badge { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--color-teal); margin-right: 6px; animation: pulse 2s infinite; }
+        @media (max-width: 1200px) { .dashboard-grid { grid-template-columns: 200px 1fr; } .right-col { display: none; } }
+        @media (max-width: 768px) { .dashboard-grid { grid-template-columns: 1fr; } .left-col { display: none; } }
     </style>
 </head>
 <body>
@@ -46,45 +146,50 @@
         <div class="dashboard-grid">
             <div class="left-col fade-in" style="animation-delay: 100ms;">
                 <div class="card" style="margin-bottom: var(--spacing-lg);">
-                    <h4 style="margin-bottom: var(--spacing-md);">YOUR PROFILE</h4>
-                    <div id="profile-summary">Loading...</div>
+                    <h4 style="font-size: 12px; color: var(--color-gold-dim); margin-bottom: var(--spacing-md);">YOUR PROFILE</h4>
+                    <div id="profile-summary" style="font-size: 13px; color: var(--color-text-dim);">Loading...</div>
                 </div>
                 <div class="card">
-                    <h4 style="margin-bottom: var(--spacing-md);">RECENT MATCHES</h4>
-                    <ul id="matches-list" style="display: flex; flex-direction: column; gap: var(--spacing-sm);"></ul>
+                    <h4 style="font-size: 12px; color: var(--color-gold-dim); margin-bottom: var(--spacing-md);">RECENT DUELS</h4>
+                    <ul id="matches-list" style="display: flex; flex-direction: column;"></ul>
                 </div>
             </div>
             <div class="center-col fade-in" style="animation-delay: 200ms;">
                 <div class="match-viewer">
                     <div class="match-header">
-                        <h4 class="font-mono">LIVE ARENA</h4>
-                        <div class="font-mono" style="font-size: 12px;">ACTIVE</div>
+                        <h4>LIVE ARENA</h4>
+                        <div class="font-mono" style="font-size: 10px; color: var(--color-teal); display: flex; align-items: center; gap: 6px;">
+                            <span style="display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--color-teal); animation: pulse 2s infinite;"></span>
+                            ACTIVE
+                        </div>
                     </div>
-                    <div class="match-split">
-                        <div class="match-red">
-                            <div class="font-mono" style="font-size: 16px;">PLAYER 1</div>
-                            <div class="font-mono" style="font-size: 24px; margin-top: 10px;">100 HP</div>
+                    <div class="match-body">
+                        <div class="match-side match-red" style="text-align: center;">
+                            <div class="player-name" style="color: var(--color-crimson);">CHALLENGER</div>
+                            <div class="player-hp red">100</div>
+                            <div style="font-family: var(--font-mono); font-size: 10px; color: var(--color-text-dim); margin-top: 4px;">HP</div>
                         </div>
-                        <div class="match-center-strip">
-                            <div>VS</div>
-                        </div>
-                        <div class="match-blue">
-                            <div class="font-mono" style="font-size: 16px;">PLAYER 2</div>
-                            <div class="font-mono" style="font-size: 24px; margin-top: 10px;">100 HP</div>
+                        <div class="match-divider"><span>VS</span></div>
+                        <div class="match-side match-blue" style="text-align: center;">
+                            <div class="player-name" style="color: var(--color-teal);">OPPONENT</div>
+                            <div class="player-hp teal">100</div>
+                            <div style="font-family: var(--font-mono); font-size: 10px; color: var(--color-text-dim); margin-top: 4px;">HP</div>
                         </div>
                     </div>
                     <div class="action-bar">
-                        <button class="btn btn-red">FIREBALL</button>
-                        <button class="btn btn-blue">FROST BOLT</button>
-                        <button class="btn">SHIELD</button>
+                        <button class="btn btn-red btn-sm">FIREBALL</button>
+                        <button class="btn btn-teal btn-sm">FROST BOLT</button>
+                        <button class="btn btn-sm" style="border-color: var(--color-gold-dim); color: var(--color-gold-dim);">SHIELD</button>
                     </div>
-                    <div class="log-panel" id="match-log"></div>
+                    <div class="log-panel" id="match-log">
+                        <div>// Awaiting duelist connection ...</div>
+                    </div>
                 </div>
             </div>
             <div class="right-col fade-in" style="animation-delay: 300ms;">
                 <div class="card">
-                    <h4 style="margin-bottom: var(--spacing-md);">ONLINE PLAYERS</h4>
-                    <ul id="online-list" style="display: flex; flex-direction: column; gap: var(--spacing-md);"></ul>
+                    <h4 style="font-size: 12px; color: var(--color-gold-dim); margin-bottom: var(--spacing-md);">ONLINE</h4>
+                    <ul id="online-list" style="display: flex; flex-direction: column;"></ul>
                 </div>
             </div>
         </div>

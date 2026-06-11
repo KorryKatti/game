@@ -3,76 +3,77 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wizard Duel | Competitive Combat</title>
-  <meta name="description" content="Engage in fast-paced, competitive 1v1 wizard duels. Real-time strategy meet precise data-forward interface.">
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <title>Wizard Duel | Competitive 1v1 Combat</title>
+  <meta name="description" content="Real-time 1v1 wizard duels. Master spells, outmaneuver opponents, climb the ranks.">
+  <link rel="icon" type="image/svg+xml" href="/vite.svg">
 </head>
 <body>
   <div id="nav-placeholder"></div>
 
   <main>
-    <section class="hero container fade-in" style="animation-delay: 100ms;">
-      <h1>CHALLENGE. CAST. WIN.</h1>
-      <p>1v1 real-time precision combat.</p>
-      <a href="/dashboard.html" class="btn">Enter Arena</a>
+    <section class="hero fade-in" style="animation-delay: 100ms;">
+      <h1>WIZARD DUEL</h1>
+      <p>Real-time 1v1 precision combat — cast, counter, conquer.</p>
+      <a href="/dashboard.html" class="btn">Enter the Arena</a>
     </section>
 
     <section class="container fade-in" style="animation-delay: 200ms;">
       <div class="grid-3">
-        <div class="card">
-          <h4>SPELLS</h4>
-          <p>Master a diverse array of elemental and arcane spells. Each cast requires timing and tactical positioning.</p>
+        <div class="card glow-gold">
+          <h4 style="color: var(--color-gold); margin-bottom: var(--spacing-sm);">SPELLS</h4>
+          <p style="color: var(--color-text-dim); font-size: 13px; line-height: 1.8;">Master elemental and arcane spells. Timing and positioning decide every duel.</p>
         </div>
-        <div class="card">
-          <h4>ARENA</h4>
-          <p>Battle in dynamic environments where every tile matters. Use the terrain to outmaneuver your opponent.</p>
+        <div class="card glow-gold">
+          <h4 style="color: var(--color-gold); margin-bottom: var(--spacing-sm);">ARENA</h4>
+          <p style="color: var(--color-text-dim); font-size: 13px; line-height: 1.8;">Battle in dynamic environments. Every tile matters — use the terrain.</p>
         </div>
-        <div class="card">
-          <h4>MULTIPLAYER</h4>
-          <p>Compete against players worldwide. Climb the ranks and prove your mastery in the global leaderboard.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="how-to-play container fade-in" style="animation-delay: 300ms; margin-bottom: var(--spacing-xxl);">
-      <h3 style="text-align: center; margin-bottom: var(--spacing-xl);">HOW TO PLAY</h3>
-      <div class="step" style="display: flex; align-items: center; gap: var(--spacing-lg); margin-bottom: var(--spacing-xl);">
-        <div class="font-mono" style="font-size: 24px; color: var(--color-red);">01</div>
-        <div>
-          <h4>FIND A MATCH</h4>
-          <p>Enter the dashboard and search for active players or wait for a challenge.</p>
-        </div>
-      </div>
-      <div class="step" style="display: flex; flex-direction: row-reverse; align-items: center; gap: var(--spacing-lg); text-align: right; margin-bottom: var(--spacing-xl);">
-        <div class="font-mono" style="font-size: 24px; color: var(--color-red);">02</div>
-        <div>
-          <h4>CAST SPELLS</h4>
-          <p>Select your spells and execute them in real-time. Manage your energy efficiently.</p>
-        </div>
-      </div>
-      <div class="step" style="display: flex; align-items: center; gap: var(--spacing-lg);">
-        <div class="font-mono" style="font-size: 24px; color: var(--color-red);">03</div>
-        <div>
-          <h4>CLAIM VICTORY</h4>
-          <p>Deplete your opponent's HP to win. Your ELO will update based on the result.</p>
+        <div class="card glow-gold">
+          <h4 style="color: var(--color-gold); margin-bottom: var(--spacing-sm);">RANKED</h4>
+          <p style="color: var(--color-text-dim); font-size: 13px; line-height: 1.8;">Compete worldwide. Climb the ELO ladder and prove your mastery.</p>
         </div>
       </div>
     </section>
 
-    <section class="leaderboard-section container fade-in" style="animation-delay: 400ms;">
-      <h3 style="margin-bottom: var(--spacing-lg);">TOP DUELISTS</h3>
+    <section class="container fade-in" style="animation-delay: 300ms; margin-bottom: var(--spacing-xxl);">
+      <div style="text-align: center; margin-bottom: var(--spacing-xl);">
+        <h3 style="color: var(--color-gold-dim); font-size: 20px;">HOW TO DUEL</h3>
+        <div style="width: 40px; height: 1px; background: var(--color-gold-dim); margin: var(--spacing-md) auto;"></div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-lg);">
+        <div class="card" style="text-align: center;">
+          <div class="font-mono" style="font-size: 28px; color: var(--color-gold-dim); margin-bottom: var(--spacing-sm);">01</div>
+          <h4 style="color: var(--color-text); margin-bottom: var(--spacing-xs);">FIND A MATCH</h4>
+          <p style="color: var(--color-text-dim); font-size: 13px;">Enter the arena and challenge active duelists.</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div class="font-mono" style="font-size: 28px; color: var(--color-gold-dim); margin-bottom: var(--spacing-sm);">02</div>
+          <h4 style="color: var(--color-text); margin-bottom: var(--spacing-xs);">CAST SPELLS</h4>
+          <p style="color: var(--color-text-dim); font-size: 13px;">Strike, shield, and outthink your opponent in real time.</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div class="font-mono" style="font-size: 28px; color: var(--color-gold-dim); margin-bottom: var(--spacing-sm);">03</div>
+          <h4 style="color: var(--color-text); margin-bottom: var(--spacing-xs);">CLAIM VICTORY</h4>
+          <p style="color: var(--color-text-dim); font-size: 13px;">Win. Rise. Your ELO reflects your skill.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="container fade-in" style="animation-delay: 400ms;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
+        <h3 style="font-size: 18px; color: var(--color-gold-dim);">TOP DUELISTS</h3>
+        <a href="/leaderboard.html" class="btn btn-sm" style="border-color: var(--color-text-dim); color: var(--color-text-dim);">Full Rankings</a>
+      </div>
       <table>
         <thead>
           <tr>
-            <th>RANK</th>
-            <th>PLAYER</th>
-            <th>WINS</th>
-            <th>LOSSES</th>
+            <th>Rank</th>
+            <th>Duelist</th>
+            <th>Wins</th>
+            <th>Losses</th>
             <th>ELO</th>
           </tr>
         </thead>
-        <tbody id="leaderboard-preview">
-        </tbody>
+        <tbody id="leaderboard-preview"></tbody>
       </table>
     </section>
   </main>

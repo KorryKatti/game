@@ -22,7 +22,7 @@ class WizardAPI {
 
         const apiKey = this.getApiKey();
         if (apiKey) {
-            headers['X-API-Key'] = apiKey;
+            headers['Authorization'] = `Bearer ${apiKey}`;
         }
 
         const response = await fetch(url, { ...options, headers });
@@ -52,21 +52,19 @@ class WizardAPI {
 
     // Profile
     static getProfile() {
-        return this.request('/profile');
+        return this.request('/v1/profile');
     }
 
     // Matches
     static getMatches(limit = 20, offset = 0) {
-        return this.request(`/matches?limit=${limit}&offset=${offset}`);
+        return this.request(`/v1/matches?limit=${limit}&offset=${offset}`);
     }
 
     static uploadMatch(formData) {
-        // Note: For multipart/form-data, don't set Content-Type manually, 
-        // fetch will set it with the boundary.
         const apiKey = this.getApiKey();
-        const headers = apiKey ? { 'X-API-Key': apiKey } : {};
+        const headers = apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {};
         
-        return fetch(`${BASE_URL}/matches`, {
+        return fetch(`${BASE_URL}/v1/matches`, {
             method: 'POST',
             headers,
             body: formData
@@ -75,11 +73,11 @@ class WizardAPI {
 
     // Players
     static getOnlinePlayers() {
-        return this.request('/players/online');
+        return this.request('/v1/players/online');
     }
 
     static heartbeat(status = 'online', ip = '127.0.0.1', port = 7777) {
-        return this.request('/players/heartbeat', {
+        return this.request('/v1/players/heartbeat', {
             method: 'POST',
             body: JSON.stringify({ game_ip: ip, game_port: port, status })
         });
@@ -87,7 +85,7 @@ class WizardAPI {
 
     // Leaderboard
     static getLeaderboard(limit = 50) {
-        return this.request(`/leaderboard?limit=${limit}`);
+        return this.request(`/v1/leaderboard?limit=${limit}`);
     }
 }
 
