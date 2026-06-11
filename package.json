@@ -1,0 +1,10 @@
+{
+  "name": "wizard-duel-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "cd frontend && bunx --bun vite build",
+    "start": "cd backend && bun run index.ts",
+    "dev": "cd backend && bun run --hot index.ts"
+  }
+}

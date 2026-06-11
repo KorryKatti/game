@@ -3,11 +3,14 @@ import { cors } from 'hono/cors'
 import { Database } from 'bun:sqlite'
 
 const app = new Hono()
-app.use('/*', cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
-  credentials: true,
-}))
-const db = new Database('wizard.db', { create: true })
+const root = import.meta.dir
+
+const corsOrigin = process.env.CORS_ORIGIN
+if (corsOrigin) {
+  app.use('/*', cors({ origin: corsOrigin.split(','), credentials: true }))
+}
+
+const db = new Database(process.env.DB_PATH || `${root}/wizard.db`, { create: true })
 
 function genApiKey() {
   return 'wzrd-' + crypto.randomUUID()
@@ -184,7 +187,19 @@ app.get('/v1/leaderboard', (c) => {
   return c.json({ players })
 })
 
+// 5. Static files (built frontend)
+const frontendDir = process.env.FRONTEND_DIR || `${root}/../frontend/dist`
+app.get('/*', async (c) => {
+  const reqPath = c.req.path === '/' ? '/index.html' : c.req.path
+  const file = Bun.file(frontendDir + reqPath)
+  if (await file.exists()) return c.body(file)
+  return c.notFound()
+})
+
+const port = Number(process.env.PORT) || 3000
 export default {
-  port: 3000,
+  port,
   fetch: app.fetch,
 }
+
+console.log(`Server running on http://localhost:${port}`)
