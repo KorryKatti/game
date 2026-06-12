@@ -61,6 +61,8 @@ struct TreePacket : NetworkPacket {
 struct PositionPacket : NetworkPacket {
   float x;
   float y;
+  uint8_t direction;
+  uint8_t frame;
 };
 
 // spell casting packet
@@ -98,11 +100,14 @@ struct Character {
   float deathTime = 0.0f;
   bool isDead = false;
   bool deathSoundPlayed = false;
-  bool is_local = false; // to check if its a local character or opponent
+  bool is_local = false;
   uint8_t last_hit_by = 255;
   Vector2 pos = {};
-  Rectangle rect = {0, 0, 30, 60};
-  uint8_t id = 0; // network id
+  Rectangle rect = {0, 0, 77, 77};
+  uint8_t id = 0;
+  int direction = 0;   // 0=front 1=left 2=right 3=back
+  int frame = 0;
+  float animTimer = 0.0f;
 };
 
 Color bloodRed = {128, 0, 0, 255};
@@ -126,10 +131,10 @@ struct Ball {
 std::unordered_map<uint32_t, Ball> active_spells; // Track spells by ID
 
 bool checkCollision(Vector2 player_pos, std::vector<Vector2> &trees_pos) {
-  Rectangle player_rect = {player_pos.x, player_pos.y, 30, 60};
+  Rectangle player_rect = {player_pos.x, player_pos.y, 77, 77};
 
   for (int i = 0; i < trees_pos.size(); i++) {
-    Rectangle tree_rect = {trees_pos[i].x, trees_pos[i].y, 30, 90};
+    Rectangle tree_rect = {trees_pos[i].x, trees_pos[i].y, 75, 120};
 
     if (CheckCollisionRecs(player_rect, tree_rect)) {
       return true;
@@ -151,7 +156,7 @@ std::vector<Texture2D> tree_spawner() {
 std::vector<Vector2> tree_positions() {
   std::vector<Vector2> vec(number_of_trees);
   int lower_bound = 000;
-  int upper_bound = 2000;
+  int upper_bound = 3000;
 
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -243,8 +248,8 @@ int main() {
   }
   atexit(enet_deinitialize);
 
-  const int screenWidth = 1280;
-  const int screenHeight = 720;
+  const int screenWidth = 1600;
+  const int screenHeight = 900;
 
   InitWindow(screenWidth, screenHeight, "WIZARD DUEL");
   InitAudioDevice();
@@ -253,7 +258,7 @@ int main() {
   printf("Island generated!\n");
   Image cursor = LoadImage("assets/cursor.png");
   Texture2D cursor_img = LoadTextureFromImage(cursor);
-  Image player_self = LoadImage("assets/self_char.png");
+  Image player_self = LoadImage("assets/new_assets/self_char spritesheet 4x8(front,left,right,back).png");
   Texture2D self_char = LoadTextureFromImage(player_self);
 
   std::vector<Ball> ball_vec;
@@ -266,8 +271,8 @@ int main() {
   Character player;
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::uniform_int_distribution<> x_distr(100, 1280);
-  std::uniform_int_distribution<> y_distr(100, 720);
+  std::uniform_int_distribution<> x_distr(1300, 1700);
+  std::uniform_int_distribution<> y_distr(1300, 1700);
 
   std::vector<Texture2D> trees = tree_spawner();
   std::vector<Vector2> tree_pos = tree_positions();
@@ -288,14 +293,14 @@ int main() {
     all_players[0].pos.y = y_distr(gen);
   } while (checkCollision(all_players[0].pos, tree_pos));
 
-  Rectangle tree_rect = {0, 0, 30, 90};
+  Rectangle tree_rect = {0, 0, 75, 120};
 
   SetTargetFPS(60);
   Camera2D camera = {0};
   camera.target.x = all_players[0].pos.x + all_players[0].rect.width / 2;
   camera.target.y = all_players[0].pos.y + all_players[0].rect.height / 2;
   camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 2.0f};
-  camera.zoom = 7.0f;
+  camera.zoom = 5.0f;
 
   int ball_x = all_players[0].pos.x;
   int ball_y = all_players[0].pos.y;
@@ -315,17 +320,27 @@ int main() {
 
     Vector2 old_pos = all_players[0].pos;
     if (all_players[0].is_local) {
-      if (IsKeyDown(KEY_D))
-        all_players[0].pos.x += 0.5f;
-      else if (IsKeyDown(KEY_A))
-        all_players[0].pos.x -= 0.5f;
-      else if (IsKeyDown(KEY_S))
-        all_players[0].pos.y += 0.5f;
-      else if (IsKeyDown(KEY_W))
-        all_players[0].pos.y -= 0.5f;
+      bool moving = false;
+      if (IsKeyDown(KEY_D)) { all_players[0].pos.x += 0.5f; all_players[0].direction = 2; moving = true; }
+      else if (IsKeyDown(KEY_A)) { all_players[0].pos.x -= 0.5f; all_players[0].direction = 1; moving = true; }
+      else if (IsKeyDown(KEY_S)) { all_players[0].pos.y += 0.5f; all_players[0].direction = 0; moving = true; }
+      else if (IsKeyDown(KEY_W)) { all_players[0].pos.y -= 0.5f; all_players[0].direction = 3; moving = true; }
       if (checkCollision(all_players[0].pos, tree_pos)) {
         all_players[0].pos = old_pos;
+        moving = false;
       }
+      if (moving) {
+        all_players[0].animTimer += deltaTime;
+        if (all_players[0].animTimer >= 0.12f) {
+          all_players[0].animTimer = 0.0f;
+          all_players[0].frame = (all_players[0].frame + 1) % 8;
+        }
+      } else {
+        all_players[0].frame = 0;
+        all_players[0].animTimer = 0.0f;
+      }
+      all_players[0].rect.x = all_players[0].frame * 77;
+      all_players[0].rect.y = all_players[0].direction * 77;
     }
 
     // Update camera target to follow local player
@@ -430,7 +445,7 @@ int main() {
     // Handle tree collision for balls
     for (int b = 0; b < ball_vec.size(); b++) {
       for (int t = 0; t < tree_pos.size(); t++) {
-        Rectangle tree_rect = {tree_pos[t].x, tree_pos[t].y, 30, 90};
+        Rectangle tree_rect = {tree_pos[t].x, tree_pos[t].y, 75, 120};
 
         if (CheckCollisionCircleRec(ball_vec[b].ball_pos, ball_vec[b].ball_r,
                                     tree_rect)) {
@@ -461,10 +476,10 @@ int main() {
 
     // Mana management
     if (camera.zoom < 5.0f) {
-      all_players[0].mana = all_players[0].mana - (camera.zoom * 0.03f);
+      all_players[0].mana = all_players[0].mana - (camera.zoom * 0.01f);
       all_players[0].draining_mana = true;
     } else if (all_players[0].mana < 300 && camera.zoom > 5.0f) {
-      all_players[0].mana = all_players[0].mana + 0.01f;
+      all_players[0].mana = all_players[0].mana + 0.05f;
       all_players[0].draining_mana = false;
     }
 
@@ -575,15 +590,15 @@ int main() {
                        playerTint);
 
         // Draw health and mana bars for each player
-        DrawRectangle((int)all_players[i].pos.x - 10,
-                      (int)all_players[i].pos.y - 30, 50, 5, DARKGRAY);
-        DrawRectangle((int)all_players[i].pos.x - 10,
-                      (int)all_players[i].pos.y - 30,
+        DrawRectangle((int)all_players[i].pos.x + 14,
+                      (int)all_players[i].pos.y - 15, 50, 5, DARKGRAY);
+        DrawRectangle((int)all_players[i].pos.x + 14,
+                      (int)all_players[i].pos.y - 15,
                       (all_players[i].health / 300.0f) * 50, 5, RED);
-        DrawRectangle((int)all_players[i].pos.x - 10,
-                      (int)all_players[i].pos.y - 23, 50, 5, DARKGRAY);
-        DrawRectangle((int)all_players[i].pos.x - 10,
-                      (int)all_players[i].pos.y - 23,
+        DrawRectangle((int)all_players[i].pos.x + 14,
+                      (int)all_players[i].pos.y - 8, 50, 5, DARKGRAY);
+        DrawRectangle((int)all_players[i].pos.x + 14,
+                      (int)all_players[i].pos.y - 8,
                       (all_players[i].mana / 300.0f) * 50, 5, PURPLE);
       }
 
@@ -591,8 +606,8 @@ int main() {
       DrawTexture(cursor_img, mouse_world.x - 10, mouse_world.y - 10, WHITE);
 
       // Check boundaries for local player
-      if (all_players[0].pos.x < 0 || all_players[0].pos.x > 2000 ||
-          all_players[0].pos.y < 0 || all_players[0].pos.y > 2000) {
+      if (all_players[0].pos.x < 0 || all_players[0].pos.x > 3000 ||
+          all_players[0].pos.y < 0 || all_players[0].pos.y > 3000) {
         all_players[0].health = 0.0f;
       }
 
@@ -807,6 +822,8 @@ int main() {
             posPacket.playerId = 0;
             posPacket.x = all_players[0].pos.x;
             posPacket.y = all_players[0].pos.y;
+            posPacket.direction = all_players[0].direction;
+            posPacket.frame = all_players[0].frame;
 
             ENetPacket *posPkt =
                 enet_packet_create(&posPacket, sizeof(PositionPacket), 0);
@@ -884,6 +901,8 @@ int main() {
             posPacket.playerId = 1;
             posPacket.x = all_players[0].pos.x;
             posPacket.y = all_players[0].pos.y;
+            posPacket.direction = 0;
+            posPacket.frame = 0;
 
             ENetPacket *posPkt =
                 enet_packet_create(&posPacket, sizeof(PositionPacket), 0);
@@ -912,6 +931,10 @@ int main() {
                 if (p.id == header->playerId) {
                   p.pos.x = posPacket->x;
                   p.pos.y = posPacket->y;
+                  p.direction = posPacket->direction;
+                  p.frame = posPacket->frame;
+                  p.rect.x = p.frame * 77;
+                  p.rect.y = p.direction * 77;
                   break;
                 }
               }
@@ -1058,15 +1081,15 @@ int main() {
                        playerTint);
 
         // Draw health and mana bars for each player
-        DrawRectangle((int)all_players[i].pos.x - 10,
-                      (int)all_players[i].pos.y - 30, 50, 5, DARKGRAY);
-        DrawRectangle((int)all_players[i].pos.x - 10,
-                      (int)all_players[i].pos.y - 30,
+        DrawRectangle((int)all_players[i].pos.x + 14,
+                      (int)all_players[i].pos.y - 15, 50, 5, DARKGRAY);
+        DrawRectangle((int)all_players[i].pos.x + 14,
+                      (int)all_players[i].pos.y - 15,
                       (all_players[i].health / 300.0f) * 50, 5, RED);
-        DrawRectangle((int)all_players[i].pos.x - 10,
-                      (int)all_players[i].pos.y - 23, 50, 5, DARKGRAY);
-        DrawRectangle((int)all_players[i].pos.x - 10,
-                      (int)all_players[i].pos.y - 23,
+        DrawRectangle((int)all_players[i].pos.x + 14,
+                      (int)all_players[i].pos.y - 8, 50, 5, DARKGRAY);
+        DrawRectangle((int)all_players[i].pos.x + 14,
+                      (int)all_players[i].pos.y - 8,
                       (all_players[i].mana / 300.0f) * 50, 5, PURPLE);
       }
 
@@ -1080,8 +1103,8 @@ int main() {
       DrawTexture(cursor_img, mouse_world.x - 10, mouse_world.y - 10, WHITE);
 
       // Check boundaries for local player
-      if (all_players[0].pos.x < 0 || all_players[0].pos.x > 2000 ||
-          all_players[0].pos.y < 0 || all_players[0].pos.y > 2000) {
+      if (all_players[0].pos.x < 0 || all_players[0].pos.x > 3000 ||
+          all_players[0].pos.y < 0 || all_players[0].pos.y > 3000) {
         all_players[0].health = 0.0f;
       }
 
@@ -1126,7 +1149,7 @@ int main() {
           if (player.isDead)
             continue;
 
-          Rectangle playerRect = {player.pos.x, player.pos.y, 30, 60};
+          Rectangle playerRect = {player.pos.x, player.pos.y, 77, 77};
 
           if (CheckCollisionCircleRec(ball.ball_pos, ball.ball_r, playerRect)) {
             // Hit detected!
@@ -1326,6 +1349,10 @@ int main() {
         posPacket.playerId = all_players[0].id;
         posPacket.x = all_players[0].pos.x;
         posPacket.y = all_players[0].pos.y;
+        posPacket.direction = all_players[0].direction;
+        posPacket.frame = all_players[0].frame;
+        posPacket.direction = all_players[0].direction;
+        posPacket.frame = all_players[0].frame;
 
         ENetPacket *packet =
             enet_packet_create(&posPacket, sizeof(PositionPacket), 0);

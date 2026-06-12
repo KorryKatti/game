@@ -6,8 +6,8 @@
 #include <cstdlib>
 #include <cstring>
 
-#define ISLAND_WIDTH 2000
-#define ISLAND_HEIGHT 2000
+#define ISLAND_WIDTH 3000
+#define ISLAND_HEIGHT 3000
 #define PERLIN_OCTAVES 6
 
 // Simple permutation table for Perlin noise
