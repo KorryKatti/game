@@ -130,6 +130,8 @@ struct Ball {
 
 std::unordered_map<uint32_t, Ball> active_spells; // Track spells by ID
 
+#include "SingleplayerAI.h"
+
 bool checkCollision(Vector2 player_pos, std::vector<Vector2> &trees_pos) {
   Rectangle player_rect = {player_pos.x, player_pos.y, 77, 77};
 
@@ -282,6 +284,7 @@ int main() {
 
   // Push another player for testing
   Character opponent;
+  opponent.id = 1;
   opponent.pos.x = x_distr(gen);
   opponent.pos.y = y_distr(gen);
   opponent.is_local = false;
@@ -642,6 +645,50 @@ int main() {
         all_players[0].is_cast = false;
       }
 
+      // Hit detection for singleplayer
+      for (int i = ball_vec.size() - 1; i >= 0; i--) {
+        Ball &ball = ball_vec[i];
+        if (ball.has_hit)
+          continue;
+
+        for (auto &player : all_players) {
+          if (player.id == ball.owner_id)
+            continue;
+          if (player.isDead)
+            continue;
+
+          Rectangle playerRect = {player.pos.x, player.pos.y, 77, 77};
+
+          if (CheckCollisionCircleRec(ball.ball_pos, ball.ball_r, playerRect)) {
+            ball.has_hit = true;
+            player.health -= ball.damage;
+            player.last_hit_by = ball.owner_id;
+            g_recorder.logHit(ball.owner_id, player.id, ball.damage,
+                              ball.spell_id);
+
+            ball.ball_r -= 10.0f;
+            if (ball.ball_r <= 5.0f) {
+              ball_vec.erase(ball_vec.begin() + i);
+            }
+            break;
+          }
+        }
+      }
+
+      // Opponent AI
+      if (all_players.size() > 1 && !all_players[1].isDead && !all_players[0].isDead) {
+        updateSingleplayerAI(all_players[1], all_players[0], ball_vec,
+                             next_spell_id, deltaTime);
+      }
+
+      // Opponent boundary check
+      if (all_players.size() > 1) {
+        if (all_players[1].pos.x < 0 || all_players[1].pos.x > 3000 ||
+            all_players[1].pos.y < 0 || all_players[1].pos.y > 3000) {
+          all_players[1].health = 0.0f;
+        }
+      }
+
       // Death animation for all players
       for (int i = 0; i < all_players.size(); i++) {
         if (all_players[i].isDead && all_players[i].deathTime < 1.0f) {
@@ -650,8 +697,16 @@ int main() {
             all_players[i].deathTime = 1.0f;
         }
 
-        if (all_players[i].health <= 0.0f) {
+        if (all_players[i].health <= 0.0f && !all_players[i].isDead) {
           all_players[i].isDead = true;
+          g_recorder.logDeath(all_players[i].id, all_players[i].last_hit_by);
+          // Clear that player's in-flight balls
+          uint8_t dead_id = all_players[i].id;
+          for (int b = ball_vec.size() - 1; b >= 0; b--) {
+            if (ball_vec[b].owner_id == dead_id) {
+              ball_vec.erase(ball_vec.begin() + b);
+            }
+          }
         }
       }
 
@@ -697,11 +752,11 @@ int main() {
 
       // Check if opponent died
       if (all_players.size() > 1 && all_players[1].isDead &&
-          !all_players[1].deathSoundPlayed) {
-        // Opponent died, show victory
+          !all_players[0].isDead && !all_players[1].deathSoundPlayed) {
         DrawRectangle(0, 0, screenWidth, screenHeight, Fade(GREEN, 0.3f));
         DrawText("VICTORY!", screenWidth / 2 - 120, screenHeight / 2 - 50, 50,
                  GOLD);
+        all_players[1].deathSoundPlayed = true;
       }
 
       bool shouldReset =
@@ -747,6 +802,7 @@ int main() {
           all_players[1].isDead = false;
           all_players[1].deathSoundPlayed = false;
           all_players[1].deathTime = 0.0f;
+          resetSingleplayerAI();
         }
       }
 
