@@ -24,6 +24,7 @@ private:
     std::string server_url;
     bool is_online;
     std::string public_ip;
+    std::string username;
     bool testing = true; // TODO: set to false when real game server is ready
     
     std::string getStoragePath() {
@@ -221,6 +222,76 @@ public:
         return res && res->status == 200;
     }
     
+    void setUsername(const std::string& name) {
+        username = name;
+    }
+
+    std::string getUsername() {
+        return username;
+    }
+
+    bool sendPing(const std::string& target_username) {
+        if (!hasAPIKey()) return false;
+
+        httplib::Client client(server_url.c_str());
+        client.set_bearer_token_auth(api_key);
+
+        json body = {
+            {"target_username", target_username}
+        };
+
+        auto res = client.Post("/v1/players/ping", body.dump(), "application/json");
+        return res && res->status == 200;
+    }
+
+    bool sendMessage(const std::string& target_username, const std::string& message) {
+        if (!hasAPIKey() || message.empty()) return false;
+
+        httplib::Client client(server_url.c_str());
+        client.set_bearer_token_auth(api_key);
+
+        json body = {
+            {"target_username", target_username},
+            {"message", message}
+        };
+
+        auto res = client.Post("/v1/chat/send", body.dump(), "application/json");
+        return res && res->status == 200;
+    }
+
+    std::vector<std::pair<std::string, std::string>> getMessages(const std::string& with_username, int limit = 50) {
+        std::vector<std::pair<std::string, std::string>> messages;
+
+        if (!hasAPIKey()) return messages;
+
+        httplib::Client client(server_url.c_str());
+        client.set_bearer_token_auth(api_key);
+
+        std::string path = "/v1/chat/messages?with=" + with_username + "&limit=" + std::to_string(limit);
+        auto res = client.Get(path);
+
+        if (res && res->status == 200) {
+            try {
+                json data = json::parse(res->body);
+                for (auto& msg : data["messages"]) {
+                    std::string from = msg["from_username"];
+                    std::string text = msg["message"];
+                    messages.push_back({from, text});
+                }
+            } catch (...) {
+                printf("Failed to parse messages\n");
+            }
+        }
+
+        return messages;
+    }
+
+    bool checkConnection() {
+        httplib::Client client(server_url.c_str());
+        auto res = client.Get("/v1/health");
+        return res && res->status == 200;
+    }
+
     ~GameClient() {
         if (is_online) {
             goOffline();

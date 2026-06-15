@@ -26,6 +26,7 @@ std::string g_player2_name = "Opponent";
 std::vector<OnlinePlayer> g_onlinePlayers;
 std::string g_selectedPlayerIP = "";
 int g_selectedPlayerPort = 0;
+std::string g_selectedChatPlayer = "";
 
 const char *SERVER_IP =
     "127.0.0.1"; // game p2p server different from main server
@@ -545,25 +546,32 @@ int main() {
       EndDrawing();
     } else if (state == "PLAYER_LIST") {
       static std::vector<OnlinePlayer> players;
-      static int selectedPort = 0;
-      static std::string selectedIP = "";
       static bool fetched = false;
+      static std::string selectedPlayer;
+      static bool openChat = false;
+      static bool pingTrigger = false;
+
+      UIHelper::updateConnectionStatus(g_gameClient);
 
       if (!fetched) {
         players = g_gameClient.getOnlinePlayers();
         fetched = true;
       }
 
-      UIHelper::drawPlayerList(players, selectedPort, selectedIP);
+      UIHelper::drawPlayerListWithStatus(players, selectedPlayer, openChat, pingTrigger);
 
-      if (selectedPort != 0) {
-        // Store opponent info
-        // Then transition to host or join
-        state = "MENU";
-        fetched = false;
-        selectedPort = 0;
-        selectedIP.clear();
-        // TODO: start connection to selected IP when needed
+      if (pingTrigger) {
+        if (g_gameClient.sendPing(selectedPlayer)) {
+          printf("Ping sent to %s\n", selectedPlayer.c_str());
+        }
+        pingTrigger = false;
+      }
+
+      if (openChat) {
+        g_selectedChatPlayer = selectedPlayer;
+        UIHelper::resetChatState();
+        state = "CHAT";
+        openChat = false;
       }
 
       Rectangle backBtn = {50, GetScreenHeight() - 80, 150, 50};
@@ -571,6 +579,19 @@ int main() {
           IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
         state = "MENU";
         fetched = false;
+      }
+
+      EndDrawing();
+    } else if (state == "CHAT") {
+      static bool closeChat = false;
+
+      UIHelper::updateConnectionStatus(g_gameClient);
+      UIHelper::drawChatWindow(g_selectedChatPlayer, closeChat, g_gameClient);
+
+      if (closeChat) {
+        state = "PLAYER_LIST";
+        closeChat = false;
+        UIHelper::resetChatState();
       }
 
       EndDrawing();
