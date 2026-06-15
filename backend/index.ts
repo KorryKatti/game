@@ -49,6 +49,19 @@ db.run(`
     file_path TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+  CREATE TABLE IF NOT EXISTS pings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    from_username TEXT,
+    to_username TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS chat_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    from_username TEXT,
+    to_username TEXT,
+    message TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `)
 
 // 2. Auth (no token needed)
@@ -80,15 +93,30 @@ app.post('/auth/login', async (c) => {
   return c.json({ success: true, api_key: user.api_key })
 })
 
+app.get('/v1/health', (c) => {
+  console.log('[API] GET /v1/health')
+  return c.json({ status: 'ok' })
+})
+
+app.get('/health', (c) => {
+  console.log('[API] GET /health')
+  return c.json({ status: 'ok' })
+})
+
 // 3. Auth Middleware
 app.use('/v1/*', async (c, next) => {
   const auth = c.req.header('Authorization')
+  console.log(`[AUTH] ${c.req.method} ${c.req.path} - Auth header: ${auth ? 'present' : 'missing'}`)
   if (!auth?.startsWith('Bearer ')) return c.json({ error: 'Missing token' }, 401)
   
   const key = auth.split(' ')[1]
   const user = db.query('SELECT * FROM users WHERE api_key = ?').get(key)
-  if (!user) return c.json({ error: 'Invalid key' }, 401)
+  if (!user) {
+    console.log(`[AUTH] Invalid key: ${key}`)
+    return c.json({ error: 'Invalid key' }, 401)
+  }
   
+  console.log(`[AUTH] Authenticated as: ${(user as any).username}`)
   c.set('user', user)
   await next()
 })
@@ -109,6 +137,7 @@ app.get('/v1/profile', (c) => {
 app.post('/v1/players/heartbeat', async (c) => {
   const user: any = c.get('user')
   const { game_ip, game_port, status } = await c.req.json()
+  console.log(`[API] Heartbeat from ${user.username}: ip=${game_ip} port=${game_port} status=${status}`)
   
   db.run(`
     INSERT INTO sessions (user_id, game_ip, game_port, status, last_seen)
@@ -124,13 +153,17 @@ app.post('/v1/players/heartbeat', async (c) => {
 })
 
 app.get('/v1/players/online', (c) => {
+  console.log('[API] GET /v1/players/online')
+  const user: any = c.get('user')
   const players = db.query(`
     SELECT users.username, users.elo, users.avatar_url, s.game_ip, s.game_port
     FROM sessions s
     JOIN users ON s.user_id = users.id
     WHERE s.status = 'online' AND s.last_seen > datetime('now', '-5 minutes')
+      AND users.username != ?
     GROUP BY users.id
-  `).all()
+  `).all(user.username)
+  console.log(`[API] Online players: ${players.length}`, JSON.stringify(players))
   return c.json({ players })
 })
 
@@ -192,6 +225,48 @@ app.get('/v1/leaderboard', (c) => {
     LIMIT ?
   `).all(limit)
   return c.json({ players })
+})
+
+// Ping
+app.post('/v1/players/ping', async (c) => {
+  const user: any = c.get('user')
+  const { target_username } = await c.req.json()
+  if (!target_username) return c.json({ error: 'target_username required' }, 400)
+
+  db.run('INSERT INTO pings (from_username, to_username) VALUES (?, ?)',
+    [user.username, target_username])
+
+  return c.json({ success: true })
+})
+
+// Chat - send message
+app.post('/v1/chat/send', async (c) => {
+  const user: any = c.get('user')
+  const { target_username, message } = await c.req.json()
+  if (!target_username || !message) return c.json({ error: 'target_username and message required' }, 400)
+
+  db.run('INSERT INTO chat_messages (from_username, to_username, message) VALUES (?, ?, ?)',
+    [user.username, target_username, message])
+
+  return c.json({ success: true })
+})
+
+// Chat - get messages
+app.get('/v1/chat/messages', (c) => {
+  const user: any = c.get('user')
+  const with_user = c.req.query('with')
+  const limit = Number(c.req.query('limit')) || 50
+  if (!with_user) return c.json({ error: 'with query param required' }, 400)
+
+  const messages = db.query(`
+    SELECT * FROM chat_messages
+    WHERE (from_username = ? AND to_username = ?)
+       OR (from_username = ? AND to_username = ?)
+    ORDER BY created_at ASC
+    LIMIT ?
+  `).all(user.username, with_user, with_user, user.username, limit)
+
+  return c.json({ messages })
 })
 
 // 5. Static files (built frontend)
