@@ -537,6 +537,7 @@ int main() {
         } else if (CheckCollisionPointRec(mouse, joinBtn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
           state = "JOIN";
         } else if (CheckCollisionPointRec(mouse, findBtn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+          g_gameClient.goOnline(SERVER_PORT);
           g_onlinePlayers = g_gameClient.getOnlinePlayers();
           state = "PLAYER_LIST";
         } else if (CheckCollisionPointRec(mouse, quitBtn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
