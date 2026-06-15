@@ -1,36 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leaderboard | Wizard Duel</title>
-    <link rel="icon" type="image/svg+xml" href="/vite.svg">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaderboard | Wizard Duel</title>
 </head>
 <body>
-    <div id="nav-placeholder"></div>
-    <main class="container">
-        <section class="fade-in">
-            <div style="text-align: center; margin-bottom: var(--spacing-xl);">
-                <h3 style="color: var(--color-gold-dim); font-size: 20px;">GLOBAL RANKINGS</h3>
-                <div style="width: 40px; height: 1px; background: var(--color-gold-dim); margin: var(--spacing-md) auto;"></div>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Duelist</th>
-                        <th>Wins</th>
-                        <th>Losses</th>
-                        <th>ELO</th>
-                        <th>Region</th>
-                    </tr>
-                </thead>
-                <tbody id="leaderboard-body">
-                </tbody>
-            </table>
-        </section>
-    </main>
-    <div id="footer-placeholder"></div>
-    <script type="module" src="/src/leaderboard.js"></script>
+  <div id="nav-placeholder"></div>
+  <main class="container" style="margin-top: 40px;">
+    <h2 style="margin-bottom: 20px;">Leaderboard</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Player</th>
+          <th>Wins</th>
+          <th>Losses</th>
+          <th>ELO</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboard-body"></tbody>
+    </table>
+  </main>
+  <div id="footer-placeholder"></div>
+  <script type="module" src="/src/leaderboard.js"></script>
 </body>
 </html>

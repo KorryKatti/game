@@ -3,83 +3,49 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wizard Duel | Competitive 1v1 Combat</title>
-  <meta name="description" content="Real-time 1v1 wizard duels. Master spells, outmaneuver opponents, climb the ranks.">
-  <link rel="icon" type="image/svg+xml" href="/vite.svg">
+  <title>Wizard Duel</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 0 auto; padding: 40px 20px; color: #ccc; background: #111; line-height: 1.6; }
+    h1 { margin-bottom: 8px; color: #fff; }
+    a { color: #6ea8fe; }
+    hr { border: none; border-top: 1px solid #333; margin: 24px 0; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 4px; }
+    .muted { color: #666; font-size: 14px; }
+    .sprite {
+      width: 77px;
+      height: 77px;
+      background-image: url('/spritesheet.png');
+      background-repeat: no-repeat;
+      background-size: 616px 308px;
+      image-rendering: pixelated;
+      animation: walk 0.8s steps(8) infinite;
+      margin: 20px 0;
+    }
+    @keyframes walk {
+      from { background-position: 0 0; }
+      to { background-position: -616px 0; }
+    }
+  </style>
 </head>
 <body>
-  <div id="nav-placeholder"></div>
+  <div class="sprite"></div>
+  <h1>Wizard Duel</h1>
+  <p>A 1v1 wizard duel game. Move with WASD, shoot with click, heal with right click. Simple to learn, hard to master.</p>
 
-  <main>
-    <section class="hero fade-in" style="animation-delay: 100ms;">
-      <h1>WIZARD DUEL</h1>
-      <p>Real-time 1v1 precision combat — cast, counter, conquer.</p>
-      <a href="/dashboard.html" class="btn">Enter the Arena</a>
-    </section>
+  <hr>
 
-    <section class="container fade-in" style="animation-delay: 200ms;">
-      <div class="grid-3">
-        <div class="card glow-gold">
-          <h4 style="color: var(--color-gold); margin-bottom: var(--spacing-sm);">SPELLS</h4>
-          <p style="color: var(--color-text-dim); font-size: 13px; line-height: 1.8;">Master elemental and arcane spells. Timing and positioning decide every duel.</p>
-        </div>
-        <div class="card glow-gold">
-          <h4 style="color: var(--color-gold); margin-bottom: var(--spacing-sm);">ARENA</h4>
-          <p style="color: var(--color-text-dim); font-size: 13px; line-height: 1.8;">Battle in dynamic environments. Every tile matters — use the terrain.</p>
-        </div>
-        <div class="card glow-gold">
-          <h4 style="color: var(--color-gold); margin-bottom: var(--spacing-sm);">RANKED</h4>
-          <p style="color: var(--color-text-dim); font-size: 13px; line-height: 1.8;">Compete worldwide. Climb the ELO ladder and prove your mastery.</p>
-        </div>
-      </div>
-    </section>
+  <ul>
+    <li><a href="/register.html">Sign Up</a></li>
+    <li><a href="/login.html">Login</a></li>
+    <li><a href="/dashboard.html">Dashboard</a> (API key, stats)</li>
+    <li><a href="/leaderboard.html">Leaderboard</a></li>
+    <li><a href="/docs.html">How to Play</a></li>
+  </ul>
 
-    <section class="container fade-in" style="animation-delay: 300ms; margin-bottom: var(--spacing-xxl);">
-      <div style="text-align: center; margin-bottom: var(--spacing-xl);">
-        <h3 style="color: var(--color-gold-dim); font-size: 20px;">HOW TO DUEL</h3>
-        <div style="width: 40px; height: 1px; background: var(--color-gold-dim); margin: var(--spacing-md) auto;"></div>
-      </div>
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-lg);">
-        <div class="card" style="text-align: center;">
-          <div class="font-mono" style="font-size: 28px; color: var(--color-gold-dim); margin-bottom: var(--spacing-sm);">01</div>
-          <h4 style="color: var(--color-text); margin-bottom: var(--spacing-xs);">FIND A MATCH</h4>
-          <p style="color: var(--color-text-dim); font-size: 13px;">Enter the arena and challenge active duelists.</p>
-        </div>
-        <div class="card" style="text-align: center;">
-          <div class="font-mono" style="font-size: 28px; color: var(--color-gold-dim); margin-bottom: var(--spacing-sm);">02</div>
-          <h4 style="color: var(--color-text); margin-bottom: var(--spacing-xs);">CAST SPELLS</h4>
-          <p style="color: var(--color-text-dim); font-size: 13px;">Strike, shield, and outthink your opponent in real time.</p>
-        </div>
-        <div class="card" style="text-align: center;">
-          <div class="font-mono" style="font-size: 28px; color: var(--color-gold-dim); margin-bottom: var(--spacing-sm);">03</div>
-          <h4 style="color: var(--color-text); margin-bottom: var(--spacing-xs);">CLAIM VICTORY</h4>
-          <p style="color: var(--color-text-dim); font-size: 13px;">Win. Rise. Your ELO reflects your skill.</p>
-        </div>
-      </div>
-    </section>
+  <hr>
 
-    <section class="container fade-in" style="animation-delay: 400ms;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
-        <h3 style="font-size: 18px; color: var(--color-gold-dim);">TOP DUELISTS</h3>
-        <a href="/leaderboard.html" class="btn btn-sm" style="border-color: var(--color-text-dim); color: var(--color-text-dim);">Full Rankings</a>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Rank</th>
-            <th>Duelist</th>
-            <th>Wins</th>
-            <th>Losses</th>
-            <th>ELO</th>
-          </tr>
-        </thead>
-        <tbody id="leaderboard-preview"></tbody>
-      </table>
-    </section>
-  </main>
-
-  <div id="footer-placeholder"></div>
-
-  <script type="module" src="/src/index.js"></script>
+  <p class="muted">Made by <a href="https://korrykatti.github.io" target="_blank">korry</a></p>
 </body>
 </html>

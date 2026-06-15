@@ -4,56 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login | Wizard Duel</title>
-  <link rel="icon" type="image/svg+xml" href="/vite.svg">
   <link rel="stylesheet" href="/src/style.css">
-  <style>
-    .auth-container {
-      max-width: 400px;
-      margin: var(--spacing-xxl) auto;
-      padding: var(--spacing-xl);
-      border: 1px solid var(--color-border);
-      background: var(--color-surface);
-    }
-    .auth-container:hover { border-color: var(--color-border-bright); }
-    .form-group { margin-bottom: var(--spacing-lg); }
-    .auth-footer {
-      margin-top: var(--spacing-lg);
-      font-size: 12px;
-      text-align: center;
-      color: var(--color-text-dim);
-    }
-    .auth-footer a { color: var(--color-gold-dim); }
-    .auth-footer a:hover { color: var(--color-gold); }
-  </style>
 </head>
 <body>
-  <nav id="main-nav">
-    <div class="container nav-content">
-      <a href="/" id="logo">WIZARD DUEL</a>
-    </div>
-  </nav>
-
-  <main class="container">
-    <div class="auth-container fade-in">
-      <h3 style="margin-bottom: var(--spacing-lg); color: var(--color-gold-dim); font-size: 18px;">ACCESS ARENA</h3>
-      <form id="login-form">
-        <div class="form-group">
-          <label for="username">Username</label>
-          <input type="text" id="username" required autocomplete="username">
-        </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" required autocomplete="current-password">
-        </div>
-        <div id="error-message" style="color: var(--color-crimson); font-size: 12px; margin-bottom: var(--spacing-md); display: none;"></div>
-        <button type="submit" class="btn" style="width: 100%;">Login</button>
-      </form>
-      <div class="auth-footer">
-        New here? <a href="/register.html">Join the Arena</a>
+  <div id="nav-placeholder"></div>
+  <main class="container" style="max-width: 400px; margin-top: 60px;">
+    <h2 style="margin-bottom: 20px;">Login</h2>
+    <form id="login-form">
+      <div style="margin-bottom: 16px;">
+        <label for="username">Username</label>
+        <input type="text" id="username" required autocomplete="username">
       </div>
-    </div>
+      <div style="margin-bottom: 16px;">
+        <label for="password">Password</label>
+        <input type="password" id="password" required autocomplete="current-password">
+      </div>
+      <div id="error-message" style="color: #f87171; font-size: 13px; margin-bottom: 12px; display: none;"></div>
+      <button type="submit" class="btn" style="width: 100%;">Login</button>
+    </form>
+    <p style="margin-top: 16px; font-size: 13px; color: #888;">
+      No account? <a href="/register.html">Sign up</a>
+    </p>
   </main>
-
+  <div id="footer-placeholder"></div>
   <script type="module" src="/src/auth.js"></script>
 </body>
 </html>

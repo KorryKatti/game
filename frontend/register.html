@@ -4,60 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Register | Wizard Duel</title>
-  <link rel="icon" type="image/svg+xml" href="/vite.svg">
   <link rel="stylesheet" href="/src/style.css">
-  <style>
-    .auth-container {
-      max-width: 400px;
-      margin: var(--spacing-xxl) auto;
-      padding: var(--spacing-xl);
-      border: 1px solid var(--color-border);
-      background: var(--color-surface);
-    }
-    .auth-container:hover { border-color: var(--color-border-bright); }
-    .form-group { margin-bottom: var(--spacing-lg); }
-    .auth-footer {
-      margin-top: var(--spacing-lg);
-      font-size: 12px;
-      text-align: center;
-      color: var(--color-text-dim);
-    }
-    .auth-footer a { color: var(--color-gold-dim); }
-    .auth-footer a:hover { color: var(--color-gold); }
-  </style>
 </head>
 <body>
-  <nav id="main-nav">
-    <div class="container nav-content">
-      <a href="/" id="logo">WIZARD DUEL</a>
-    </div>
-  </nav>
-
-  <main class="container">
-    <div class="auth-container fade-in">
-      <h3 style="margin-bottom: var(--spacing-lg); color: var(--color-gold-dim); font-size: 18px;">JOIN THE ARENA</h3>
-      <form id="register-form">
-        <div class="form-group">
-          <label for="username">Username</label>
-          <input type="text" id="username" required autocomplete="username">
-        </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" required autocomplete="new-password">
-        </div>
-        <div class="form-group">
-          <label for="avatar">Avatar URL (optional)</label>
-          <input type="url" id="avatar" placeholder="https://imgur.com/...">
-        </div>
-        <div id="error-message" style="color: var(--color-crimson); font-size: 12px; margin-bottom: var(--spacing-md); display: none;"></div>
-        <button type="submit" class="btn" style="width: 100%;">Create Account</button>
-      </form>
-      <div class="auth-footer">
-        Already a duelist? <a href="/login.html">Login</a>
+  <div id="nav-placeholder"></div>
+  <main class="container" style="max-width: 400px; margin-top: 60px;">
+    <h2 style="margin-bottom: 20px;">Sign Up</h2>
+    <form id="register-form">
+      <div style="margin-bottom: 16px;">
+        <label for="username">Username</label>
+        <input type="text" id="username" required autocomplete="username">
       </div>
-    </div>
+      <div style="margin-bottom: 16px;">
+        <label for="password">Password</label>
+        <input type="password" id="password" required autocomplete="new-password">
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label for="avatar">Avatar URL (optional)</label>
+        <input type="url" id="avatar" placeholder="https://...">
+      </div>
+      <div id="error-message" style="color: #f87171; font-size: 13px; margin-bottom: 12px; display: none;"></div>
+      <button type="submit" class="btn" style="width: 100%;">Create Account</button>
+    </form>
+    <p style="margin-top: 16px; font-size: 13px; color: #888;">
+      Already have an account? <a href="/login.html">Login</a>
+    </p>
   </main>
-
+  <div id="footer-placeholder"></div>
   <script type="module" src="/src/auth.js"></script>
 </body>
 </html>

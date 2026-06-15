@@ -1,14 +1,16 @@
 import { Hono } from 'hono'
-import { cors } from 'hono/cors'
 import { Database } from 'bun:sqlite'
 
 const app = new Hono()
 const root = import.meta.dir
 
-const corsOrigin = process.env.CORS_ORIGIN
-if (corsOrigin) {
-  app.use('/*', cors({ origin: corsOrigin.split(','), credentials: true }))
-}
+app.use('/*', async (c, next) => {
+  c.header('Access-Control-Allow-Origin', '*')
+  c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  c.header('Access-Control-Allow-Headers', '*')
+  if (c.req.method === 'OPTIONS') return c.text('', 204)
+  await next()
+})
 
 const db = new Database(process.env.DB_PATH || `${root}/wizard.db`, { create: true })
 
@@ -30,7 +32,7 @@ db.run(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
   CREATE TABLE IF NOT EXISTS sessions (
-    user_id INTEGER,
+    user_id INTEGER UNIQUE,
     game_ip TEXT,
     game_port INTEGER,
     status TEXT,
@@ -109,8 +111,13 @@ app.post('/v1/players/heartbeat', async (c) => {
   const { game_ip, game_port, status } = await c.req.json()
   
   db.run(`
-    INSERT INTO sessions (user_id, game_ip, game_port, status, last_seen) 
+    INSERT INTO sessions (user_id, game_ip, game_port, status, last_seen)
     VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(user_id) DO UPDATE SET
+      game_ip = excluded.game_ip,
+      game_port = excluded.game_port,
+      status = excluded.status,
+      last_seen = CURRENT_TIMESTAMP
   `, [user.id, game_ip, game_port, status])
   
   return c.json({ success: true })
@@ -118,10 +125,10 @@ app.post('/v1/players/heartbeat', async (c) => {
 
 app.get('/v1/players/online', (c) => {
   const players = db.query(`
-    SELECT users.username, users.elo, s.game_ip, s.game_port
+    SELECT users.username, users.elo, users.avatar_url, s.game_ip, s.game_port
     FROM sessions s
     JOIN users ON s.user_id = users.id
-    WHERE s.last_seen > datetime('now', '-5 minutes')
+    WHERE s.status = 'online' AND s.last_seen > datetime('now', '-5 minutes')
     GROUP BY users.id
   `).all()
   return c.json({ players })
@@ -167,9 +174,9 @@ app.post('/v1/matches', async (c) => {
     [matchId, user.username, opponentName, winner, duration, `${dir}/${user.username}.wzrd`]
   )
 
-  // Update wins/losses
+  // Update wins/losses for the current player
   const winCol = winner === user.username ? 'wins' : 'losses'
-  db.run(`UPDATE users SET ${winCol} = ${winCol} + 1 WHERE username = ?`, [winner])
+  db.run(`UPDATE users SET ${winCol} = ${winCol} + 1 WHERE username = ?`, [user.username])
 
   return c.json({ success: true, match_id: matchId })
 })

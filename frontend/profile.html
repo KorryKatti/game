@@ -1,48 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile | Wizard Duel</title>
-    <link rel="icon" type="image/svg+xml" href="/vite.svg">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile | Wizard Duel</title>
 </head>
 <body>
-    <div id="nav-placeholder"></div>
-    <main class="container">
-        <section class="fade-in">
-            <div style="text-align: center; margin-bottom: var(--spacing-xl);">
-                <h3 style="color: var(--color-gold-dim); font-size: 20px;">YOUR SANCTUM</h3>
-                <div style="width: 40px; height: 1px; background: var(--color-gold-dim); margin: var(--spacing-md) auto;"></div>
-            </div>
-            <div class="card" id="profile-details" style="max-width: 500px; margin: 0 auto; text-align: center;">
-                <div style="margin-bottom: var(--spacing-xl);">
-                    <div id="profile-avatar-placeholder" style="width: 100px; height: 100px; border: 2px solid var(--color-gold-dim); margin: 0 auto var(--spacing-lg); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 28px; background: var(--color-surface-raised); color: var(--color-gold-dim);">
-                        WD
-                    </div>
-                    <h3 id="profile-username" style="font-size: 22px;">Loading...</h3>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-lg);">
-                    <div>
-                        <div style="font-family: var(--font-display); font-size: 10px; letter-spacing: 0.12em; color: var(--color-gold-dim); margin-bottom: 4px;">ELO</div>
-                        <div class="font-mono" style="font-size: 24px; color: var(--color-gold);" id="profile-elo">-</div>
-                    </div>
-                    <div>
-                        <div style="font-family: var(--font-display); font-size: 10px; letter-spacing: 0.12em; color: var(--color-teal-dim); margin-bottom: 4px;">WINS</div>
-                        <div class="font-mono" style="font-size: 24px; color: var(--color-teal);" id="profile-wins">-</div>
-                    </div>
-                    <div>
-                        <div style="font-family: var(--font-display); font-size: 10px; letter-spacing: 0.12em; color: var(--color-crimson-dim); margin-bottom: 4px;">LOSSES</div>
-                        <div class="font-mono" style="font-size: 24px; color: var(--color-crimson);" id="profile-losses">-</div>
-                    </div>
-                </div>
-                <hr>
-                <div style="font-size: 12px; color: var(--color-text-dim);">
-                    Initiated <span id="profile-created">-</span>
-                </div>
-            </div>
-        </section>
-    </main>
-    <div id="footer-placeholder"></div>
-    <script type="module" src="/src/profile.js"></script>
+  <div id="nav-placeholder"></div>
+  <main class="container" style="margin-top: 40px; max-width: 500px;">
+    <h2 style="margin-bottom: 20px;">Profile</h2>
+    <div class="card" id="profile-details">
+      <div style="text-align: center; padding: 40px 0;">
+        <div id="profile-avatar-placeholder" style="width: 80px; height: 80px; border-radius: 50%; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 24px; margin: 0 auto 16px; color: #888;">
+          WD
+        </div>
+        <h3 id="profile-username">Loading...</h3>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: center; margin-top: 16px;">
+        <div>
+          <div style="font-size: 11px; color: #888; margin-bottom: 4px;">ELO</div>
+          <div style="font-size: 22px; font-weight: 700; color: #facc15;" id="profile-elo">-</div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: #888; margin-bottom: 4px;">Wins</div>
+          <div style="font-size: 22px; font-weight: 700; color: #4ade80;" id="profile-wins">-</div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: #888; margin-bottom: 4px;">Losses</div>
+          <div style="font-size: 22px; font-weight: 700; color: #f87171;" id="profile-losses">-</div>
+        </div>
+      </div>
+      <hr>
+      <p style="font-size: 12px; color: #666;">Playing since <span id="profile-created">-</span></p>
+    </div>
+  </main>
+  <div id="footer-placeholder"></div>
+  <script type="module" src="/src/profile.js"></script>
 </body>
 </html>

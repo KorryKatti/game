@@ -1,94 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spellbook | Wizard Duel</title>
-    <link rel="icon" type="image/svg+xml" href="/vite.svg">
-    <style>
-        .spell-card {
-            background: var(--color-surface);
-            border: 1px solid var(--color-border);
-            padding: var(--spacing-lg);
-            transition: var(--transition-fast);
-        }
-        .spell-card:hover { border-color: var(--color-border-bright); }
-        .spell-card h4 { color: var(--color-gold); margin-bottom: var(--spacing-sm); }
-        .spell-card p { color: var(--color-text-dim); font-size: 13px; line-height: 1.8; }
-        .endpoint {
-            font-family: var(--font-mono);
-            font-size: 12px;
-            background: var(--color-surface-raised);
-            padding: var(--spacing-md);
-            border: 1px solid var(--color-border);
-            margin-top: var(--spacing-md);
-            line-height: 2;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Play | Wizard Duel</title>
+  <style>
+    .spell { margin-bottom: 16px; }
+    .spell strong { color: #ccc; }
+    .spell p { color: #888; font-size: 13px; margin-top: 2px; }
+    .section-title { font-size: 16px; font-weight: 600; color: #fff; margin: 24px 0 8px; }
+  </style>
 </head>
 <body>
-    <div id="nav-placeholder"></div>
+  <div id="nav-placeholder"></div>
+  <main class="container" style="margin-top: 40px; max-width: 640px;">
+    <h2 style="margin-bottom: 20px;">How to Play</h2>
 
-    <main class="container">
-        <section class="fade-in">
-            <div style="text-align: center; margin-bottom: var(--spacing-xl);">
-                <h3 style="color: var(--color-gold-dim); font-size: 20px;">SPELLBOOK</h3>
-                <div style="width: 40px; height: 1px; background: var(--color-gold-dim); margin: var(--spacing-md) auto;"></div>
-            </div>
+    <div class="card" style="margin-bottom: 16px;">
+      <p>Wizard Duel is a 1v1 game. Two wizards fight in a small arena with trees for cover.</p>
+    </div>
 
-            <div class="grid-3" style="align-items: start;">
-                <div class="spell-card" style="grid-column: span 2;">
-                    <h4>CORE MECHANICS</h4>
-                    <p>Wizard Duel is a real-time 1v1 dueling game. Victory is determined by mana management, aim, and positioning.</p>
+    <div class="section-title">Controls</div>
+    <div class="card" style="margin-bottom: 16px;">
+      <p><strong>WASD</strong> — Move</p>
+      <p><strong>1 + Left Click</strong> — Cast Blood Red (high damage, slow)</p>
+      <p><strong>2 + Left Click</strong> — Cast Dark Blue (low damage, fast)</p>
+      <p><strong>Right Click</strong> — Heal with mana shield</p>
+      <p><strong>Z (hold)</strong> — Zoom out, regenerate mana faster</p>
+    </div>
 
-                    <h5 style="margin: var(--spacing-lg) 0 var(--spacing-sm);">1. MOVEMENT &amp; POSITIONING</h5>
-                    <p>Free movement with WASD in an arena scattered with destructible trees. Trees block projectiles and can be destroyed.</p>
+    <div class="section-title">Spells</div>
+    <div class="card" style="margin-bottom: 16px;">
+      <div class="spell">
+        <strong style="color: #ef4444;">Blood Red</strong>
+        <p>35 damage. Medium speed. Large radius. Your heavy hitter.</p>
+      </div>
+      <div class="spell">
+        <strong style="color: #60a5fa;">Dark Blue</strong>
+        <p>25 damage. High speed. Small radius. For precise shots.</p>
+      </div>
+      <div class="spell">
+        <strong style="color: #4ade80;">Mana Shield</strong>
+        <p>Right click to heal. Costs 10 mana, restores 2 HP. Use wisely.</p>
+      </div>
+    </div>
 
-                    <h5 style="margin: var(--spacing-lg) 0 var(--spacing-sm);">2. SPELL CASTING</h5>
-                    <p>Hold <strong>1</strong> or <strong>2</strong> + Left Click to cast. No cooldowns — only your mana pool limits you. Right Click drains mana to heal. Zoom out (hold Z) to regenerate mana faster.</p>
-
-                    <h5 style="margin: var(--spacing-lg) 0 var(--spacing-sm);">3. RANKING SYSTEM</h5>
-                    <p>ELO calculates skill based on match outcomes. Defeating higher-ranked opponents yields greater gains.</p>
-                </div>
-
-                <div class="spell-card">
-                    <h4>SPELL ARSENAL</h4>
-                    <ul style="display: flex; flex-direction: column; gap: var(--spacing-md); margin-top: var(--spacing-md);">
-                        <li>
-                            <strong style="color: var(--color-crimson);">BLOOD RED</strong>
-                            <div style="font-size: 12px; color: var(--color-text-dim); margin-top: 2px;">Hold <strong>1</strong> + Left Click. High damage (35), medium speed, large radius.</div>
-                        </li>
-                        <li>
-                            <strong style="color: var(--color-teal);">DARK BLUE</strong>
-                            <div style="font-size: 12px; color: var(--color-text-dim); margin-top: 2px;">Hold <strong>2</strong> + Left Click. Lower damage (25), high speed, small radius.</div>
-                        </li>
-                        <li>
-                            <strong style="color: var(--color-gold-dim);">MANA SHIELD</strong>
-                            <div style="font-size: 12px; color: var(--color-text-dim); margin-top: 2px;"><strong>Right Click</strong> while holding &gt;12 mana. Drains 10 mana, heals 2 HP.</div>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="spell-card" style="margin-top: var(--spacing-lg);">
-                <h4>GAME CLIENT</h4>
-                <p style="margin-top: var(--spacing-md);">Wizard Duel is a desktop game built with C++ and Raylib. Download the game client, then use your API key from the dashboard to authenticate.</p>
-                <p style="margin-top: var(--spacing-sm); font-size: 12px; color: var(--color-text-dim);">Create a file named <code>wizard_api_key.txt</code> in the game directory and paste your key inside. The game reads it on startup.</p>
-            </div>
-
-            <div class="spell-card" style="margin-top: var(--spacing-lg);">
-                <h4>API REFERENCE</h4>
-                <p style="margin-top: var(--spacing-md);">Access match data via REST API. Authenticate with your API key.</p>
-                <div class="endpoint">
-                    GET /v1/leaderboard<br>
-                    GET /v1/matches/{id}<br>
-                    POST /v1/players/heartbeat
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <div id="footer-placeholder"></div>
-    <script type="module" src="/src/docs.js"></script>
+    <div class="section-title">Setup</div>
+    <div class="card">
+      <p>1. <a href="/register.html">Create an account</a> to get your API key.</p>
+      <p>2. Put the key in a file called <code>wizard_api_key.txt</code> next to the game.</p>
+      <p>3. Launch the game and start dueling.</p>
+    </div>
+  </main>
+  <div id="footer-placeholder"></div>
+  <script type="module" src="/src/docs.js"></script>
 </body>
 </html>
