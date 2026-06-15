@@ -107,7 +107,26 @@ inline void updateSingleplayerAI(Character &ai, const Character &player,
   if (aiState.attackCooldown <= 0.0f && dist < 500.0f) {
     float manaCost = 5.0f;
 
-    if (aiState.spellChoice == 1 && ai.mana >= 25.0f) {
+    // Mana Burn: use when player is low on mana (prevent healing) or when AI has low mana
+    if (aiState.spellChoice == 3 && ai.mana >= 20.0f) {
+      Ball new_ball;
+      new_ball.spell_id = next_spell_id++;
+      new_ball.owner_id = ai.id;
+      new_ball.target_pos = player.pos;
+      new_ball.ball_pos = ai.pos;
+      new_ball.spellColor = PURPLE;
+      new_ball.ball_speed = 3.0f;
+      new_ball.ball_r = 20.0f;
+      new_ball.damage = 30.0f;
+      new_ball.has_hit = false;
+      new_ball.mana_burn = true;
+      ball_vec.push_back(new_ball);
+      ai.mana -= 10.0f;
+      ai.is_cast = true;
+      aiState.attackCooldown = 1.0f + (float)(rand() % 100) / 200.0f;
+      aiState.spellChoice = 1;
+
+    } else if (aiState.spellChoice == 1 && ai.mana >= 25.0f) {
       Ball new_ball;
       new_ball.spell_id = next_spell_id++;
       new_ball.owner_id = ai.id;
@@ -122,7 +141,12 @@ inline void updateSingleplayerAI(Character &ai, const Character &player,
       ai.mana -= manaCost;
       ai.is_cast = true;
       aiState.attackCooldown = 1.2f + (float)(rand() % 100) / 200.0f;
-      aiState.spellChoice = 2;
+      // After blood red, chance to use mana burn if player mana is low
+      if (player.mana < 100.0f && (rand() % 3 == 0)) {
+        aiState.spellChoice = 3;
+      } else {
+        aiState.spellChoice = 2;
+      }
 
     } else if (aiState.spellChoice == 2 && ai.mana >= 35.0f) {
       Ball new_ball;
@@ -141,6 +165,26 @@ inline void updateSingleplayerAI(Character &ai, const Character &player,
       aiState.attackCooldown = 0.8f + (float)(rand() % 100) / 200.0f;
       aiState.spellChoice = 1;
     }
+  }
+
+  // Blink: dodge when low health
+  if (ai.health < 100.0f && ai.mana >= 40.0f && dist < 400.0f) {
+    // Blink away from player
+    float blinkDist = 300.0f;
+    Vector2 blinkTarget = {
+      ai.pos.x - (dx / dist) * blinkDist,
+      ai.pos.y - (dy / dist) * blinkDist
+    };
+
+    // Clamp to map bounds
+    if (blinkTarget.x < 0) blinkTarget.x = 0;
+    if (blinkTarget.y < 0) blinkTarget.y = 0;
+    if (blinkTarget.x > 3000) blinkTarget.x = 3000;
+    if (blinkTarget.y > 3000) blinkTarget.y = 3000;
+
+    ai.pos = blinkTarget;
+    ai.mana -= 40.0f;
+    aiState.attackCooldown = 0.5f;
   }
 }
 

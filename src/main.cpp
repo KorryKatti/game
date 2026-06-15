@@ -127,6 +127,7 @@ struct Ball {
   uint32_t spell_id = 0;
   uint8_t owner_id = 0;
   bool has_hit = false;
+  bool mana_burn = false; // if true, damages mana instead of health
 };
 
 std::unordered_map<uint32_t, Ball> active_spells; // Track spells by ID
@@ -444,6 +445,74 @@ int main() {
           }
         }
       }
+    } else if (IsKeyDown(KEY_THREE)) {
+      if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        if (all_players[0].mana >= 20.0f) {
+          Ball new_ball;
+          new_ball.spell_id = next_spell_id++;
+          new_ball.owner_id = all_players[0].id;
+          new_ball.target_pos = mouse_world;
+          new_ball.ball_pos = all_players[0].pos;
+          new_ball.spellColor = PURPLE;
+          new_ball.ball_speed = 3.0f;
+          new_ball.ball_r = 20.0f;
+          new_ball.damage = 30.0f;
+          new_ball.has_hit = false;
+          new_ball.mana_burn = true;
+
+          ball_vec.push_back(new_ball);
+          active_spells[new_ball.spell_id] = new_ball;
+
+          all_players[0].mana -= 10.0f;
+          all_players[0].is_cast = true;
+
+          g_recorder.logSpellCast(all_players[0].id, 3, mouse_world.x,
+                                  mouse_world.y, all_players[0].pos.x,
+                                  all_players[0].pos.y, new_ball.damage,
+                                  new_ball.spell_id);
+
+          if (state == "MULTIPLAYER") {
+            SpellCastPacket spellPacket;
+            spellPacket.type = MSG_SPELL_CAST;
+            spellPacket.playerId = all_players[0].id;
+            spellPacket.target_x = mouse_world.x;
+            spellPacket.target_y = mouse_world.y;
+            spellPacket.spell_type = 3;
+            spellPacket.pos_x = all_players[0].pos.x;
+            spellPacket.pos_y = all_players[0].pos.y;
+            spellPacket.spell_id = new_ball.spell_id;
+
+            ENetPacket *packet =
+                enet_packet_create(&spellPacket, sizeof(SpellCastPacket),
+                                   ENET_PACKET_FLAG_RELIABLE);
+            if (clientHost != nullptr && serverPeer != nullptr) {
+              enet_peer_send(serverPeer, 0, packet);
+            } else if (serverHost != nullptr && clientPeer != nullptr) {
+              enet_peer_send(clientPeer, 0, packet);
+            }
+          }
+        }
+      }
+    } else if (IsKeyDown(KEY_FOUR)) {
+      if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        if (all_players[0].mana >= 40.0f) {
+          Vector2 blink_target = mouse_world;
+          float dx = blink_target.x - all_players[0].pos.x;
+          float dy = blink_target.y - all_players[0].pos.y;
+          float dist = sqrt(dx * dx + dy * dy);
+          float max_range = 300.0f;
+
+          if (dist > max_range) {
+            blink_target.x = all_players[0].pos.x + (dx / dist) * max_range;
+            blink_target.y = all_players[0].pos.y + (dy / dist) * max_range;
+          }
+
+          if (!checkCollision(blink_target, tree_pos)) {
+            all_players[0].pos = blink_target;
+            all_players[0].mana -= 40.0f;
+          }
+        }
+      }
     }
 
     // Handle tree collision for balls
@@ -683,7 +752,12 @@ int main() {
 
           if (CheckCollisionCircleRec(ball.ball_pos, ball.ball_r, playerRect)) {
             ball.has_hit = true;
-            player.health -= ball.damage;
+            if (ball.mana_burn) {
+              player.mana -= ball.damage;
+              if (player.mana < 0) player.mana = 0;
+            } else {
+              player.health -= ball.damage;
+            }
             player.last_hit_by = ball.owner_id;
             g_recorder.logHit(ball.owner_id, player.id, ball.damage,
                               ball.spell_id);
@@ -1047,11 +1121,17 @@ int main() {
                 new_ball.ball_speed = 2.0f;
                 new_ball.damage = 35.0f;
                 new_ball.ball_r = 35.0f;
-              } else {
+              } else if (spellPacket->spell_type == 2) {
                 new_ball.spellColor = DARKBLUE;
                 new_ball.ball_speed = 4.0f;
                 new_ball.damage = 25.0f;
                 new_ball.ball_r = 25.0f;
+              } else if (spellPacket->spell_type == 3) {
+                new_ball.spellColor = PURPLE;
+                new_ball.ball_speed = 3.0f;
+                new_ball.damage = 30.0f;
+                new_ball.ball_r = 20.0f;
+                new_ball.mana_burn = true;
               }
 
               // new_ball.ball_r = 25.0f;
@@ -1233,7 +1313,12 @@ int main() {
             // Hit detected!
             ball.has_hit = true;
 
-            player.health -= ball.damage;
+            if (ball.mana_burn) {
+              player.mana -= ball.damage;
+              if (player.mana < 0) player.mana = 0;
+            } else {
+              player.health -= ball.damage;
+            }
             player.last_hit_by = ball.owner_id;
             g_recorder.logHit(ball.owner_id, player.id, ball.damage,
                               ball.spell_id);
@@ -1461,10 +1546,10 @@ int main() {
           enet_peer_send(serverPeer, 0, packet);
         } else if (serverHost != nullptr && clientPeer != nullptr) {
           enet_peer_send(clientPeer, 0, packet);
+          }
         }
       }
     }
-  }
   // Network cleanup
   if (serverHost != nullptr) {
     enet_host_destroy(serverHost);
