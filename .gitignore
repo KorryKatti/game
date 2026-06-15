@@ -44,3 +44,6 @@ planz.md
 
 # debug information files
 *.dwo
+
+# Match recordings
+*.wzrd
